@@ -1,7 +1,7 @@
 {
   "name": "basecamp-manager",
   "displayName": "Basecamp Manager",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Read and manage Basecamp cards from Claude Code, with a guard hook that blocks deletes and writes to anything that is not yours",
   "author": {
     "name": "Austin Airton Linares Castillo",

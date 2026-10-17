@@ -87,7 +87,7 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 
 | | Version |
 |---|---|
-| Plugin | **0.4.0** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.4.1** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |

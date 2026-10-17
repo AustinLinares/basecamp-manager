@@ -6,6 +6,13 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-17
+
+### Changed
+
+- Docs only: `briefing.md` says that search ignores a `type=` parameter (filter with jq) and how
+  pagination behaves (a short list comes back whole, `x-total-count` gives the total).
+
 ## [0.4.0] - 2026-10-17
 
 ### Added
