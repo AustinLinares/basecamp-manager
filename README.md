@@ -43,10 +43,14 @@ trash anyone's cards, and there is no undo. This plugin bundles three things:
 
 ## Install
 
-In Claude Code:
+In Claude Code, paste **one command at a time** and press Enter after each (pasting both together
+makes Claude Code read the second line as an argument of the first):
 
 ```
 /plugin marketplace add AustinLinares/basecamp-manager
+```
+
+```
 /plugin install basecamp-manager@basecamp-manager
 ```
 
@@ -54,6 +58,16 @@ Claude Code asks for the plugin options (you can keep the defaults). Start a new
 [docs/SETUP.md](docs/SETUP.md): register your OAuth app, run `~/.config/basecamp-manager/bcm login` in
 your terminal, and say **"set up Basecamp"** in Claude Code. The guard is active as soon as the plugin
 is enabled.
+
+> **Run `bcm login` in a regular terminal** (Terminal, iTerm, your IDE's terminal), **not in the Claude
+> chat** and not with the `!` prefix: it asks for your Client Secret, which must never end up in the
+> session, and `!` has no keyboard input anyway.
+
+**Let Claude set it up with Claude in Chrome (optional).** If you give Claude the
+[Claude in Chrome](https://claude.ai/chrome) extension, say **"set up Basecamp"** and it can fill in
+the OAuth app form at Launchpad and discover your account, person and board ids. It never types
+credentials: **you** click **Register this app**, copy the Client ID and Client Secret into your
+password manager, and run `bcm login` in your terminal so they stay out of the session.
 
 The plugin's command line, always at `~/.config/basecamp-manager/bcm`:
 
@@ -70,7 +84,7 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 
 | | Version |
 |---|---|
-| Plugin | **0.3.0** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.3.1** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |

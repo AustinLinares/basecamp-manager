@@ -6,6 +6,20 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-17
+
+### Changed
+
+- Install docs (both READMEs and `docs/SETUP.md`): the two `/plugin` commands are in separate code
+  blocks, because pasting both lines at once made Claude Code take the second line as an argument of
+  the first.
+- Docs and the setup prompt (`skills/basecamp/references/setup.md`) say that `bcm login` must run in a
+  regular terminal, not in the Claude chat and not with the `!` prefix (no keyboard input there, so it
+  fails with `EOFError`, and the secret must stay out of the session).
+- Docs describe the optional setup with Claude in Chrome: Claude fills in the Launchpad form and
+  discovers the ids; the user clicks Register, copies the Client ID and Client Secret and runs
+  `bcm login` themselves.
+
 ## [0.3.0] - 2026-10-17
 
 ### Added

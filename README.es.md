@@ -46,10 +46,14 @@ reasignar o mandar a la papelera las tarjetas de cualquiera, y no hay deshacer. 
 
 ## Instalación
 
-En Claude Code:
+En Claude Code, pega **un comando a la vez** y pulsa Enter después de cada uno (si pegas los dos
+juntos, Claude Code lee la segunda línea como argumento de la primera):
 
 ```
 /plugin marketplace add AustinLinares/basecamp-manager
+```
+
+```
 /plugin install basecamp-manager@basecamp-manager
 ```
 
@@ -57,6 +61,16 @@ Claude Code te pide las opciones del plugin (puedes dejar las de por defecto). A
 sigue [docs/SETUP.md](docs/SETUP.md) (en inglés): registra tu app OAuth, ejecuta
 `~/.config/basecamp-manager/bcm login` en tu terminal y di **"configura Basecamp"** en Claude Code. El
 guardia queda activo en cuanto el plugin está habilitado.
+
+> **Ejecuta `bcm login` en una terminal normal** (Terminal, iTerm, la terminal de tu IDE), **no en el
+> chat de Claude** ni con el prefijo `!`: pide tu Client Secret, que nunca debe quedar en la sesión, y
+> además `!` no tiene entrada de teclado.
+
+**Deja que Claude lo configure con Claude in Chrome (opcional).** Si le das a Claude la extensión
+[Claude in Chrome](https://claude.ai/chrome), di **"configura Basecamp"** y puede rellenar el
+formulario de la app OAuth en Launchpad y descubrir tus ids de cuenta, persona y tablero. Nunca
+escribe credenciales: **tú** pulsas **Register this app**, copias el Client ID y el Client Secret a tu
+gestor de contraseñas y ejecutas `bcm login` en tu terminal para que no queden en la sesión.
 
 La línea de comandos del plugin, siempre en `~/.config/basecamp-manager/bcm`:
 
@@ -73,7 +87,7 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 
 | | Versión |
 |---|---|
-| Plugin | **0.3.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.3.1** (ver [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 o superior** (necesita `onFailure: "block"` para que el guardia falle cerrado). Probado en 2.1.301 |
 | API de Basecamp | API de Basecamp 5 (`3.basecampapi.com`), endpoints verificados en la [documentación oficial](https://github.com/basecamp/bc3-api) el 2026-10-17 |
 | Python | 3.8 o superior, solo biblioteca estándar (ejecuta el guardia) |

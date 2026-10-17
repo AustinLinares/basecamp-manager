@@ -26,10 +26,14 @@ to send it to Basecamp.
 
 ## 1. Install the plugin
 
-In Claude Code:
+In Claude Code, paste **one command at a time** and press Enter after each (pasting both together
+makes Claude Code read the second line as an argument of the first):
 
 ```
 /plugin marketplace add AustinLinares/basecamp-manager
+```
+
+```
 /plugin install basecamp-manager@basecamp-manager
 ```
 
@@ -40,6 +44,11 @@ Then **start a new Claude Code session** (or run `/reload-plugins`). On start, t
 `bcm` command at `~/.config/basecamp-manager/bcm`, which the next steps use.
 
 ## 2. Register your OAuth app
+
+> **Optional: let Claude do this with Claude in Chrome.** With the extension connected, Claude opens
+> Launchpad and fills in the form below (name, company, website, product, redirect URI). **You** click
+> **Register this app** and copy the Client ID and Client Secret yourself; Claude never types or reads
+> them, so they stay out of the session.
 
 1. Open <https://launchpad.37signals.com/integrations> and sign in with your Basecamp login.
 2. Click **Register one now** (or **Register another application**).
@@ -57,7 +66,8 @@ Then **start a new Claude Code session** (or run `/reload-plugins`). On start, t
 
 ## 3. Log in (in your own terminal)
 
-Open a regular terminal, **not** the Claude chat, and run:
+Open a regular terminal (Terminal, iTerm, your IDE's terminal), **not** the Claude chat and not with
+the `!` prefix (it has no keyboard input, so `bcm login` fails with `EOFError`), and run:
 
 ```bash
 ~/.config/basecamp-manager/bcm login

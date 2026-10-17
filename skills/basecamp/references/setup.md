@@ -23,8 +23,10 @@ to follow `docs/SETUP.md` steps 2 and 3, and summarize:
 
 1. Register an app at `https://launchpad.37signals.com/integrations` with redirect URI
    `http://localhost:8765/oauth`. Keep `client_id` and `client_secret` in a password manager.
-2. In **their own terminal** (not here, because it asks for the secret), run
-   `~/.config/basecamp-manager/bcm login`. It opens the browser, catches the authorization on
+2. In **their own terminal** (a regular one: Terminal, iTerm, the IDE's terminal; **not this chat and
+   not the `!` prefix**, which has no keyboard input and fails with `EOFError`; and because it asks for
+   the secret), run `~/.config/basecamp-manager/bcm login`. If `bcm` does not exist yet, give the
+   `python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/bcm.py" login` form with the expanded path. It opens the browser, catches the authorization on
    localhost, and saves the token without printing it.
 3. Come back and say when it is done. Then run the doctor again.
 
@@ -32,8 +34,11 @@ to follow `docs/SETUP.md` steps 2 and 3, and summarize:
 token in the chat. If the user pastes one, tell them to regenerate the secret in Launchpad and log in
 again, and do not use the pasted value.
 
-**Optional guided mode with Claude in Chrome.** If the user wants it and the browser tools are
-available, you can open the Launchpad integrations page and explain each field. Limits: you never type
+**Optional guided mode with Claude in Chrome.** Offer it when the browser tools are available: you open
+the Launchpad integrations page (a new tab, since you cannot see the user's open ones) and fill in the
+non-secret fields (name, company, website, Basecamp 5, redirect URI). If an app already exists, ask
+before registering another and do not open its page (it shows the secret). Tell the user to run
+`bcm login` in their terminal afterwards. Limits: you never type
 passwords, secrets or tokens; the user clicks "Register" and "Yes, I'll allow access" themselves; if
 a login page appears, stop and let the user sign in; never read the `code` from the address bar for
 them. You only point and explain.
