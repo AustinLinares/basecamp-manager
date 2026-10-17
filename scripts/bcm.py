@@ -106,14 +106,15 @@ def user_agent():
     return config.get("user_agent") or "basecamp-manager setup"
 
 
-def post_form(url, fields):
+def post_form(url, fields, timeout=30):
     data = urllib.parse.urlencode(fields).encode()
     request = urllib.request.Request(url, data=data, method="POST", headers={"User-Agent": user_agent()})
     try:
-        with urllib.request.urlopen(request, timeout=30) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             return json.load(response)
     except urllib.error.HTTPError as error:
         body = error.read().decode(errors="replace")[:300]
+        error.close()
         raise Fail(f"{url} answered {error.code}: {body}")
     except urllib.error.URLError as error:
         raise Fail(f"could not reach {url}: {error.reason}")
@@ -262,16 +263,23 @@ def cmd_login(args):
 
 # --------------------------------------------------------------------------------------- refresh
 
-def cmd_refresh(args):
+def refresh_token(timeout=30):
+    """Exchanges the saved refresh token for a new access token and saves it. Returns the new expiry
+    (epoch seconds). Prints nothing. Raises Fail when it cannot."""
     oauth = read_json("oauth.json")
     if not oauth or not oauth.get("refresh_token"):
         raise Fail("no refresh token saved; run: bcm login")
     response = post_form(f"{LAUNCHPAD}/authorization/token", {
         "grant_type": "refresh_token", "refresh_token": oauth["refresh_token"],
-        "client_id": oauth.get("client_id", ""), "client_secret": oauth.get("client_secret", "")})
+        "client_id": oauth.get("client_id", ""), "client_secret": oauth.get("client_secret", "")},
+        timeout=timeout)
     if "access_token" not in response:
         raise Fail(f"the refresh returned no token: {sorted(response)}; run: bcm login")
-    expires_at = save_tokens(response, oauth.get("client_id"), oauth.get("client_secret"), oauth)
+    return save_tokens(response, oauth.get("client_id"), oauth.get("client_secret"), oauth)
+
+
+def cmd_refresh(args):
+    expires_at = refresh_token()
     print(f"Token refreshed. Valid for {days_left(expires_at):.0f} days.")
 
 
@@ -318,7 +326,11 @@ def cmd_doctor(args):
     report(bool(config.get("user_agent")), "config.json has user_agent", "run: bcm login")
     for key in ("account_id", "person_id"):
         report(bool(config.get(key)), f"config.json has {key}", 'in Claude Code, say "set up Basecamp"')
-    report(bool((config.get("guard") or {}).get("protected_columns")), "config.json has guard.protected_columns",
+    try:
+        protected = load_guard().protected_columns(config)
+    except Exception:
+        protected = None
+    report(bool(protected), "config.json has protected columns (guard.protected_columns or a board's)",
            'in Claude Code, say "set up Basecamp" (cards in those columns cannot be claimed)')
 
     info = read_json("token-info.json", {}) or {}

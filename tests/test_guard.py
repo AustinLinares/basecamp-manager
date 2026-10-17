@@ -434,5 +434,61 @@ class TestSecrets(GuardTestCase):
         self.assertAllowed(guard.decide({"tool_name": "Read", "tool_input": {"file_path": path}}))
 
 
+class TestMultipleBoards(GuardTestCase):
+    """boards{} with per-board protected_columns: the guard protects the union."""
+
+    def with_boards(self, boards, guard_cfg=None):
+        config = {"account_id": ACCOUNT, "person_id": ME, "boards": boards}
+        if guard_cfg is not None:
+            config["guard"] = guard_cfg
+        self.write_config(config)
+
+    def claim(self, card_id):
+        return self.curl("PUT", f"/card_tables/cards/{card_id}.json", {"assignee_ids": [ME]})
+
+    def test_board_only_config_still_works(self):
+        self.assertDenied(self.claim(12), "protected column")
+        self.assertAllowed(self.claim(10))
+
+    def test_union_of_boards_is_protected(self):
+        self.with_boards({"a": {"protected_columns": [IN_PROGRESS]},
+                          "b": {"protected_columns": [IN_REVIEW]}}, {"protected_columns": [DONE]})
+        for card_id in (12, 13, 14):
+            self.assertDenied(self.claim(card_id), "protected column")
+        self.assertAllowed(self.claim(10))
+
+    def test_board_key_and_boards_together(self):
+        self.write_config({"account_id": ACCOUNT, "person_id": ME, "board": {"columns": {}},
+                           "guard": {"protected_columns": [IN_PROGRESS]},
+                           "boards": {"b": {"protected_columns": [IN_REVIEW]}}})
+        self.assertDenied(self.claim(12), "protected column")
+        self.assertDenied(self.claim(13), "protected column")
+
+    def test_boards_without_protected_lists_protects_only_guard_list(self):
+        self.with_boards({"a": {"name": "x"}}, {"protected_columns": [IN_PROGRESS]})
+        self.assertDenied(self.claim(12), "protected column")
+        self.assertAllowed(self.claim(10))
+
+    def test_malformed_boards_fail_closed(self):
+        for boards in ([1, 2], "x", {"a": [1]}, {"a": {"protected_columns": "401"}},
+                       {"a": {"protected_columns": [True]}}, {"a": {"protected_columns": ["401"]}}):
+            self.with_boards(boards)
+            self.assertDenied(self.claim(10), "boards")
+            self.assertDenied(self.curl("PUT", "/card_tables/cards/20.json", {"title": "x"}), "boards")
+
+    def test_malformed_guard_list_fails_closed(self):
+        self.write_config({"account_id": ACCOUNT, "person_id": ME, "guard": {"protected_columns": "401"}})
+        self.assertDenied(self.claim(10), "protected_columns")
+
+    def test_reads_unaffected_by_malformed_boards(self):
+        self.with_boards([1])
+        self.assertAllowed(self.bash(f'curl -s "{BASE}/card_tables/cards/10.json"'))
+
+    def test_protected_columns_helper(self):
+        cfg = {"guard": {"protected_columns": [1]}, "boards": {"a": {"protected_columns": [2]}, "b": {}}}
+        self.assertEqual(guard.protected_columns(cfg), {1, 2})
+        self.assertEqual(guard.protected_columns({}), set())
+
+
 if __name__ == "__main__":
     unittest.main()

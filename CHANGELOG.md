@@ -6,6 +6,28 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-17
+
+### Added
+
+- Multiple boards: config.json may hold `boards` (alias -> board, same shape as `board`) plus
+  `default_board`. A config with only `board` works unchanged. Each board may carry its own
+  `protected_columns`; the guard protects the union of those and `guard.protected_columns`. A
+  `boards` section that is not an object of objects, or a `protected_columns` that is not a list of
+  integers, blocks every card write (fail closed). Setup assistant, SKILL.md, `config.example.json`,
+  `docs/SETUP.md` and both READMEs explain picking a board by alias and adding one with reads only.
+- Automatic token refresh: at session start, when the token has 3 days or fewer left, `session_start.py`
+  renews it with the same logic as `bcm refresh` (`refresh_token` in `bcm.py`), with a 4 second network
+  timeout, no output of any secret and no failure of the session. If it cannot, the old warning is
+  shown, and it is not retried for 30 minutes (marker file `refresh-failed`, timestamp only). New plugin
+  option `auto_refresh` (default on).
+
+- 19 new tests (123 in total).
+
+### Changed
+
+- `bcm doctor` accepts protected columns from any board. `post_form` takes an optional timeout.
+
 ## [0.4.1] - 2026-10-17
 
 ### Changed

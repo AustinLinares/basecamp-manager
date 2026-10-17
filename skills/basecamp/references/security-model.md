@@ -12,6 +12,7 @@ The guard is a `PreToolUse` hook that runs before every Bash, Read, Edit, Write 
 | Claiming | Only `PUT {"assignee_ids":[you]}` with nothing else, on an unassigned card outside the protected columns, if `allow_claim` |
 | Comments | Create only, on your cards, if `allow_comments`; edits and deletes are denied |
 | Uploads | One image, video or PDF per call, from a file outside the credentials directory, if `allow_uploads`; it appears only where one of your cards embeds it |
+| Several boards | Protected columns are the union of `guard.protected_columns` and every board's `protected_columns`; a malformed `boards` section blocks card writes |
 | Allowlist | Any write to an endpoint not on the list, or with another method, is denied |
 | curl only | A command that mentions the API host must start with `curl`; `echo`, `python`, `bash -c`, `xargs` are denied |
 | Separators | Commands are split at `&`, `;`, `|` and newlines and every piece that mentions the host is checked. A `&` inside a closed quote with no expansion is plain text (`?q=a&page=2`); with a comment, backtick, `$(...)`, `${`, `$'` or an unclosed quote nearby, every `&` splits |

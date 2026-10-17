@@ -99,14 +99,23 @@ with `GET /recordings/<card_id>/comments.json`.
 - **Cards that come up mid-task** (a bug, a pending item): propose the card or the step right when it
   appears, with the content ready, instead of leaving it for later. Mark steps done as work finishes.
 
-Column ids are in `board.columns` of config.json. To list columns, GET the card table:
-`/card_tables/<card_table_id>.json` (`.lists[] | {id, title}`).
+Column ids are in `board.columns` of config.json (or `boards.<alias>.columns`). To list columns, GET
+the card table: `/card_tables/<card_table_id>.json` (`.lists[] | {id, title}`).
+
+**Several boards.** If config.json has `boards` (alias -> board) instead of `board`, pick the board by
+alias: the one the user names ("on kapia", "in the other board"), else `default_board`. If the user
+did not name one and there is no `default_board`, ask. Use that board's `card_table_id` and
+`columns`, and say which board you used. Cards, steps and comments are addressed by id, so only
+creating a card and moving it depend on the board's column ids; never mix column ids across boards.
+To add a board, follow "Adding another board later" in [references/setup.md](references/setup.md):
+reads only, then show the new entry and write the config after approval.
 
 If `${user_config.use_workflow}` is `true`, also follow [references/workflow.md](references/workflow.md).
 
 ## 6. Token expiry and health
 
-Access tokens last two weeks. A `401` means it expired: run `~/.config/basecamp-manager/bcm refresh`
+Access tokens last two weeks. The session hook renews the token by itself when 3 days or fewer are left (plugin option
+`auto_refresh`). A `401` means it expired anyway: run `~/.config/basecamp-manager/bcm refresh`
 (it prints no secret), then retry the read. If the refresh fails, the user runs
 `~/.config/basecamp-manager/bcm login` in their own terminal; never run `login` yourself, it is
 interactive and asks for the secret. When something looks wrong, run

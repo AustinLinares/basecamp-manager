@@ -15,6 +15,7 @@ import threading
 import time
 import unittest
 import urllib.request
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(ROOT, "scripts")
@@ -117,7 +118,7 @@ class TestTokens(HomeTestCase):
         bcm.save_tokens({"access_token": "A", "refresh_token": "R", "expires_in": 10}, "id", "secret")
         sent = {}
 
-        def fake_post(url, fields):
+        def fake_post(url, fields, timeout=30):
             sent.update(fields)
             return {"access_token": "B", "expires_in": 1209600}
 
@@ -166,6 +167,166 @@ class TestSessionStart(HomeTestCase):
 
     def test_no_note_before_login(self):
         self.assertIsNone(session_start.expiry_note(self.home))
+
+
+class FakeTokenEndpoint:
+    """A local stand-in for the Launchpad token endpoint. Records what it receives."""
+
+    def __init__(self, status=200, delay=0):
+        self.requests = []
+        outer = self
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length") or 0)
+                outer.requests.append(self.rfile.read(length).decode())
+                if delay:
+                    time.sleep(delay)
+                body = json.dumps({"access_token": "NEWTOKEN", "expires_in": 1209600}
+                                  if status == 200 else {"error": "bad"}).encode()
+                try:
+                    self.send_response(status)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(body)
+                except OSError:
+                    pass
+
+            def log_message(self, *args):
+                pass
+
+        self.server = HTTPServer(("127.0.0.1", 0), Handler)
+        self.url = f"http://127.0.0.1:{self.server.server_address[1]}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+class TestAutoRefresh(HomeTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.saved_launchpad = bcm.LAUNCHPAD
+        self.addCleanup(setattr, bcm, "LAUNCHPAD", self.saved_launchpad)
+        self.saved_option = os.environ.pop("CLAUDE_PLUGIN_OPTION_AUTO_REFRESH", None)
+        self.addCleanup(self.restore_option)
+
+    def restore_option(self):
+        os.environ.pop("CLAUDE_PLUGIN_OPTION_AUTO_REFRESH", None)
+        if self.saved_option is not None:
+            os.environ["CLAUDE_PLUGIN_OPTION_AUTO_REFRESH"] = self.saved_option
+
+    def endpoint(self, **kwargs):
+        fake = FakeTokenEndpoint(**kwargs)
+        self.addCleanup(fake.close)
+        bcm.LAUNCHPAD = fake.url
+        return fake
+
+    def login(self, days):
+        bcm.save_tokens({"access_token": "OLD", "refresh_token": "REFRESH", "expires_in": 100}, "id", "CSECRET")
+        with open(os.path.join(self.home, "token-info.json"), "w") as handle:
+            json.dump({"expires_at": time.time() + days * 86400}, handle)
+
+    def refresh(self):
+        """Runs try_refresh with bcm.py's LAUNCHPAD already pointed at the fake endpoint."""
+        original = session_start.load_bcm
+        session_start.load_bcm = lambda: bcm
+        try:
+            return session_start.try_refresh(self.home)
+        finally:
+            session_start.load_bcm = original
+
+    def test_refreshes_inside_the_window(self):
+        fake = self.endpoint()
+        self.login(1)
+        self.assertTrue(self.refresh())
+        self.assertEqual(len(fake.requests), 1)
+        self.assertIn("grant_type=refresh_token", fake.requests[0])
+        self.assertEqual(self.read("token"), "NEWTOKEN")
+        self.assertEqual(json.loads(self.read("oauth.json"))["refresh_token"], "REFRESH")
+        self.assertEqual(self.mode("token"), 0o600)
+        self.assertIsNone(session_start.expiry_note(self.home))
+
+    def test_expired_token_is_refreshed_too(self):
+        self.endpoint()
+        self.login(-2)
+        self.assertTrue(self.refresh())
+
+    def test_does_nothing_when_fresh(self):
+        fake = self.endpoint()
+        self.login(10)
+        self.assertFalse(self.refresh())
+        self.assertEqual(fake.requests, [])
+
+    def test_option_off(self):
+        fake = self.endpoint()
+        self.login(1)
+        os.environ["CLAUDE_PLUGIN_OPTION_AUTO_REFRESH"] = "false"
+        self.assertFalse(self.refresh())
+        self.assertEqual(fake.requests, [])
+        self.assertEqual(self.read("token"), "OLD")
+        self.assertIn("refresh", session_start.expiry_note(self.home))
+
+    def test_option_true_refreshes(self):
+        self.endpoint()
+        self.login(1)
+        os.environ["CLAUDE_PLUGIN_OPTION_AUTO_REFRESH"] = "true"
+        self.assertTrue(self.refresh())
+
+    def test_rejected_refresh_falls_back_to_warning_and_backs_off(self):
+        fake = self.endpoint(status=400)
+        self.login(1)
+        self.assertFalse(self.refresh())
+        self.assertEqual(self.read("token"), "OLD")
+        self.assertIn("refresh", session_start.expiry_note(self.home))
+        self.assertFalse(self.refresh())
+        self.assertEqual(len(fake.requests), 1)  # the second start did not try again
+
+    def test_unreachable_endpoint_does_not_raise(self):
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]
+        bcm.LAUNCHPAD = f"http://127.0.0.1:{port}"
+        self.login(1)
+        self.assertFalse(self.refresh())
+        self.assertEqual(self.read("token"), "OLD")
+
+    def test_slow_endpoint_is_cut_off(self):
+        self.endpoint(delay=3)
+        self.login(1)
+        original = session_start.REFRESH_TIMEOUT
+        session_start.REFRESH_TIMEOUT = 0.5
+        self.addCleanup(setattr, session_start, "REFRESH_TIMEOUT", original)
+        started = time.time()
+        self.assertFalse(self.refresh())
+        self.assertLess(time.time() - started, 2.5)
+
+    def test_no_login_no_attempt(self):
+        fake = self.endpoint()
+        self.assertFalse(self.refresh())
+        os.makedirs(self.home, exist_ok=True)
+        with open(os.path.join(self.home, "token-info.json"), "w") as handle:
+            json.dump({"expires_at": time.time() + 86400}, handle)
+        self.assertFalse(self.refresh())  # no oauth.json: the failure is swallowed
+        self.assertEqual(fake.requests, [])
+
+    def test_script_is_silent_about_secrets(self):
+        self.login(1)
+        out = subprocess.run(["python3", "-I", os.path.join(SCRIPTS, "session_start.py")],
+                             capture_output=True, text=True, timeout=20,
+                             env={"BASECAMP_MANAGER_HOME": self.home, "PATH": os.environ["PATH"],
+                                  "CLAUDE_PLUGIN_OPTION_AUTO_REFRESH": "false"})
+        self.assertEqual(out.returncode, 0)
+        for secret in ("OLD", "REFRESH", "CSECRET"):
+            self.assertNotIn(secret, out.stdout + out.stderr)
+        self.assertIn("expires in", out.stdout)
+
+    def test_manifest_declares_the_option(self):
+        with open(os.path.join(ROOT, ".claude-plugin", "plugin.json")) as handle:
+            option = json.load(handle)["userConfig"]["auto_refresh"]
+        self.assertEqual((option["type"], option["default"]), ("boolean", True))
 
 
 class TestGuardWrapper(unittest.TestCase):

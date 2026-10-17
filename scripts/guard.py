@@ -19,6 +19,9 @@ Rules (fail-closed for anything it cannot classify):
     variable that only such a curl uses. The OAuth secrets file is never readable by the agent.
 Reads (GET) pass through.
 
+Boards: config.json holds one "board" or several under "boards" (alias -> board). Protected columns
+are the union of guard.protected_columns and every board's protected_columns.
+
 Configuration: <BASECAMP_MANAGER_HOME or ~/.config/basecamp-manager>/config.json, plus the plugin
 options exported as CLAUDE_PLUGIN_OPTION_<KEY>. The script contains no ids.
 """
@@ -155,10 +158,34 @@ def fetch(config, path, what):
         raise Deny(f"could not verify {what} ({type(error).__name__}); write blocked")
 
 
+def column_ids(value, where):
+    if value is None:
+        return set()
+    if not isinstance(value, list) or any(isinstance(i, bool) or not isinstance(i, int) for i in value):
+        raise Deny(f"{where} must be a list of column ids; fix config.json (writes are blocked until then)")
+    return set(value)
+
+
+def protected_columns(config):
+    """Union of guard.protected_columns and the protected_columns of every board in "boards". A
+    "boards" section that is not an object of objects fails closed (Deny)."""
+    protected = column_ids((config.get("guard") or {}).get("protected_columns"), "guard.protected_columns")
+    boards = config.get("boards")
+    if boards is None:
+        return protected
+    if not isinstance(boards, dict):
+        raise Deny("boards in config.json must be an object of boards; fix it (writes are blocked until then)")
+    for alias, board in boards.items():
+        if not isinstance(board, dict):
+            raise Deny(f"boards.{alias} in config.json must be an object; fix it (writes are blocked until then)")
+        protected |= column_ids(board.get("protected_columns"), f"boards.{alias}.protected_columns")
+    return protected
+
+
 def card_allowed(config, card_id, kind, claim=False):
     me = config["person_id"]
     guard = config["guard"]
-    protected = set(guard.get("protected_columns") or [])
+    protected = protected_columns(config)
     card = fetch(config, f"/card_tables/cards/{card_id}.json", f"card {card_id}")
     assignees = [person.get("id") for person in card.get("assignees") or []]
     if me in assignees:

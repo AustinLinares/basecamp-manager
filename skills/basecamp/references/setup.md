@@ -72,10 +72,23 @@ Ask the user to map the columns (triage, todo, in progress, in review, done; any
 which columns are **protected**: cards there cannot be claimed, and the user's own unassigned cards
 stop being editable there. Suggest in progress, in review and every done or closing column.
 
+Single board: use the `board` key. If the user already has `board` and wants another one, or wants
+several from the start, use `boards` (alias -> board, same shape as `board`) plus `default_board`; keep
+the existing board as an alias (ask for a short one, e.g. the project name in lowercase). Put each
+board's protected columns in its own `protected_columns` (the guard protects the union with
+`guard.protected_columns`). Never drop an existing protected column when editing the config.
+
 Build the JSON following `${CLAUDE_PLUGIN_ROOT}/config/config.example.json`, keeping every key the
 existing config.json already has (at least `user_agent`), show it, and after the user approves write
 it with the Write tool to `~/.config/basecamp-manager/config.json`. It holds no secrets. Leave out
 `workflow` unless the user wants the workflow conventions.
+
+### Adding another board later (reads only)
+
+1. Read config.json (Read tool) and note the aliases and the person id.
+2. Steps 3.3 and 3.4 above for the new project: list projects, then its columns. Reads only.
+3. Ask for an alias and which columns are protected, show the new `boards` entry, and after approval
+   write the whole config back (existing keys unchanged).
 
 ## 5. Verify
 
@@ -86,14 +99,15 @@ it with the Write tool to `~/.config/basecamp-manager/config.json`. It holds no 
    instead, the plugin is not enabled: tell the user to check `/plugin` and restart Claude Code.
    **Never test the guard with a real DELETE or any real write.**
 4. Tell the user how many days the token has left (the doctor prints it) and that
-   `bcm refresh` renews it; you will remind them when fewer than three days are left.
+   the session hook renews it by itself when fewer than three days are left (option `auto_refresh`);
+   `bcm refresh` does it by hand, and you warn them if the automatic renewal fails.
 
 ## 6. Rules the user can change
 
 Tell the user, once, where the rules live:
 
 - Plugin options (`/plugin` > Installed > basecamp-manager > Configure options): `allow_claim`,
-  `allow_comments`, `own_unassigned_edit_minutes`, `card_language`, `use_workflow`.
-- `guard.protected_columns` in config.json.
+  `allow_comments`, `allow_uploads`, `own_unassigned_edit_minutes`, `auto_refresh`, `card_language`, `use_workflow`.
+- `guard.protected_columns` (and each board's `protected_columns`) in config.json.
 
 You never change these yourself to get a write through.

@@ -1,7 +1,7 @@
 {
   "name": "basecamp-manager",
   "displayName": "Basecamp Manager",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Read and manage Basecamp cards from Claude Code, with a guard hook that blocks deletes and writes to anything that is not yours",
   "author": {
     "name": "Austin Airton Linares Castillo",
@@ -44,6 +44,12 @@
       "default": 0,
       "min": 0,
       "max": 10080
+    },
+    "auto_refresh": {
+      "type": "boolean",
+      "title": "Renew the token automatically",
+      "description": "At the start of a session, renew the Basecamp access token when it has 3 days or fewer left (short network timeout, never blocks the session, prints no secret). If it cannot, Claude warns you instead.",
+      "default": true
     },
     "card_language": {
       "type": "string",

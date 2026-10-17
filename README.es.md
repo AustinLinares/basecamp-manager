@@ -81,7 +81,7 @@ La línea de comandos del plugin, siempre en `~/.config/basecamp-manager/bcm`:
 | Comando | Qué hace |
 |---|---|
 | `bcm login` | Abre el navegador, recibe la autorización en localhost y guarda el token sin mostrarlo |
-| `bcm refresh` | Renueva el token (cada dos semanas; Claude te avisa y puede ejecutarlo) |
+| `bcm refresh` | Renueva el token (cada dos semanas). El hook de inicio de sesión lo ejecuta solo cuando quedan 3 días o menos (opción `auto_refresh`); también puedes ejecutarlo a mano |
 | `bcm doctor` | Revisa herramientas, permisos, configuración, token, id de persona y el guardia |
 
 Actualizaciones: en `/plugin`, **Marketplaces**, elige `basecamp-manager` y activa la actualización
@@ -91,7 +91,7 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 
 | | Versión |
 |---|---|
-| Plugin | **0.4.1** (ver [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.5.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 o superior** (necesita `onFailure: "block"` para que el guardia falle cerrado). Probado en 2.1.301 |
 | API de Basecamp | API de Basecamp 5 (`3.basecampapi.com`), endpoints verificados en la [documentación oficial](https://github.com/basecamp/bc3-api) el 2026-10-17 |
 | Python | 3.8 o superior, solo biblioteca estándar (ejecuta el guardia) |
@@ -114,7 +114,9 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 | Falla cerrado | Si no puede verificar algo, bloquea |
 
 Cada persona configura sus reglas: opciones del plugin en `/plugin` y `guard.protected_columns` en
-`~/.config/basecamp-manager/config.json`. Detalle: [modelo de seguridad](skills/basecamp/references/security-model.md).
+`~/.config/basecamp-manager/config.json`. Puedes trabajar con varios tableros (`boards` y
+`default_board` en config.json, cada uno con un alias); el guardia protege la unión de las columnas
+protegidas de todos los tableros. Detalle: [modelo de seguridad](skills/basecamp/references/security-model.md).
 
 ## Límites, sin rodeos
 

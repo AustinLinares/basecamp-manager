@@ -20,5 +20,26 @@
   "workflow": {
     "title_prefixes": ["[Frontend]", "[Backend]", "[Fullstack]"],
     "pr_line": "PR: <link>"
+  },
+
+  "_multiple_boards": "Optional. Replace \"board\" with \"boards\" (alias -> board, same shape) plus \"default_board\". Each board may list its own protected_columns; the guard protects the union of those and guard.protected_columns. Delete every key that starts with an underscore.",
+  "_boards_example": {
+    "default_board": "main",
+    "boards": {
+      "main": {
+        "name": "My board",
+        "project_id": 11111111,
+        "card_table_id": 22222222,
+        "columns": {"triage": 33333301, "todo": 33333302, "in_progress": 33333303, "in_review": 33333304, "done": 33333305},
+        "protected_columns": [33333303, 33333304, 33333305]
+      },
+      "other": {
+        "name": "Another project",
+        "project_id": 44444444,
+        "card_table_id": 55555555,
+        "columns": {"todo": 66666601, "in_progress": 66666602, "done": 66666603},
+        "protected_columns": [66666602, 66666603]
+      }
+    }
   }
 }

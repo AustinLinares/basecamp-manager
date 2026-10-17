@@ -77,7 +77,7 @@ The plugin's command line, always at `~/.config/basecamp-manager/bcm`:
 | Command | What it does |
 |---|---|
 | `bcm login` | Opens the browser, catches the authorization on localhost and saves the token without printing it |
-| `bcm refresh` | Renews the access token (every two weeks; Claude reminds you and can run it) |
+| `bcm refresh` | Renews the access token (every two weeks). The session hook runs it for you when 3 days or fewer are left (option `auto_refresh`); you can run it by hand too |
 | `bcm doctor` | Checks tools, permissions, config, token, person id and the guard |
 
 Updates: run `/plugin`, **Marketplaces**, select `basecamp-manager`, and turn on auto-update, or
@@ -87,7 +87,7 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 
 | | Version |
 |---|---|
-| Plugin | **0.4.1** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.5.0** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |
@@ -110,7 +110,9 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 | Fail closed | If it cannot verify something, it blocks |
 
 Rules are configurable per person: plugin options in `/plugin` and `guard.protected_columns` in
-`~/.config/basecamp-manager/config.json`. Details: [security model](skills/basecamp/references/security-model.md).
+`~/.config/basecamp-manager/config.json`. You can work with several boards (`boards` plus
+`default_board` in config.json, each with an alias); the guard protects the union of every board's
+protected columns. Details: [security model](skills/basecamp/references/security-model.md).
 
 ## Honest limits
 
@@ -151,7 +153,7 @@ hooks/hooks.json  registers the guard and the session hook
 scripts/guard.sh  finds Python and starts the guard
 scripts/guard.py  the guard
 scripts/bcm.py    login, refresh, doctor
-scripts/session_start.py  keeps the bcm launcher current, warns before the token expires
+scripts/session_start.py  keeps the bcm launcher current, renews the token (or warns) before it expires
 skills/basecamp/  the skill and its references
 config/           config.example.json
 docs/SETUP.md     setup guide

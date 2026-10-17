@@ -108,6 +108,26 @@ To do it by hand instead, copy `config/config.example.json` from this repository
 **person id** comes from `GET /my/profile.json` in your account. It is not the `identity.id` that
 Launchpad shows; mixing them up makes the guard reject every write.
 
+### Several boards
+
+To work with more than one board, say "add another board" to Claude (it only reads, then shows you
+the change before writing). By hand, replace `board` with `boards`, one entry per alias, and name the
+default:
+
+```json
+"default_board": "main",
+"boards": {
+  "main":  {"project_id": 1, "card_table_id": 2, "columns": {"todo": 3, "in_progress": 4, "done": 5},
+            "protected_columns": [4, 5]},
+  "other": {"project_id": 6, "card_table_id": 7, "columns": {"todo": 8, "done": 9},
+            "protected_columns": [9]}
+}
+```
+
+A config with only `board` keeps working. The guard treats the union of `guard.protected_columns` and
+every board's `protected_columns` as protected. If `boards` is malformed, writes are blocked until
+you fix it.
+
 ## 6. Check it works
 
 ```bash
@@ -128,6 +148,7 @@ Run `/plugin`, open **Installed**, select **basecamp-manager**, then **Configure
 | `allow_comments` | on | Claude may post comments on your cards (never edit or delete them) |
 | `allow_uploads` | on | Claude may upload screenshots, recordings and PDFs to embed them in your cards |
 | `own_unassigned_edit_minutes` | 0 | How long a card you created stays editable before it has assignees. 0 = no limit |
+| `auto_refresh` | on | At the start of a session, renew the token when 3 days or fewer are left (4 second network limit, no secret printed). If it fails, Claude warns you |
 | `card_language` | auto | Language for card titles, steps and comments. `auto` follows your messages |
 | `use_workflow` | off | Follow the optional workflow conventions (see `skills/basecamp/references/workflow.md`) |
 
@@ -140,8 +161,9 @@ partially disabled; to turn it off you disable the whole plugin.
 ~/.config/basecamp-manager/bcm refresh
 ```
 
-Claude reminds you at the start of a session when fewer than three days are left, and can run the
-refresh itself (it prints no secret). If the refresh token stops working, run `bcm login` again; it
+With `auto_refresh` on (the default), the session hook renews the token at the start of a session
+when fewer than three days are left, without printing anything. If that fails (offline, revoked
+refresh token), Claude warns you instead and can run the refresh itself (it prints no secret). If the refresh token stops working, run `bcm login` again; it
 offers to reuse your saved app.
 
 ## If a secret leaks
