@@ -21,7 +21,8 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 ### Changed
 
 - The guard no longer splits a command at a `&` that sits inside a closed quote with no expansion, so
-  URLs with several query parameters (`?q=a&page=2`, needed for search filters and pagination) work.
+  URLs with several query parameters (`?q=a&page=2`) work. Checked live: the API ignores a `type=`
+  filter on search, so results are filtered with jq.
   The scan is conservative: a comment, backtick, `$(...)` other than the token read, `${`, `$'` or an
   unclosed quote leaves the command untouched, and every `&` keeps separating commands. A `&` outside
   quotes, a delete after a quoted URL and a quote closed early are still denied.

@@ -33,11 +33,13 @@ T=$(cat ~/.config/basecamp-manager/token); curl -s -H "Authorization: Bearer $T"
   "https://3.basecampapi.com/<account_id>/search.json?q=mediciones" | jq '[.[] | {id, type, title: (.title // .content), parent: .parent.title, project: .bucket.name}]'
 ```
 
-- URL-encode the text (`%20` for a space). Filter by type with jq (`select(.type=="Kanban::Card")`).
+- URL-encode the text (`%20` for a space). The API ignores a `type=` parameter (checked live: steps
+  came back too), so filter by type with jq (`select(.type=="Kanban::Card")`).
 - A URL with several query parameters needs `&` inside the quoted URL. The guard accepts that only
   for a closed quote with no `$(...)`, backtick or `${` in it; otherwise it treats `&` as a command
   separator and denies the call. If it denies, drop the extra parameter and filter with jq.
-- Paginated: follow `Link: rel="next"` (add `-D -` to see it).
+- Paginated: when a `Link: rel="next"` header is present, follow it (add `-D -` to see headers;
+  `x-total-count` tells how many there are). A short list comes back whole, so `page=2` is empty.
 
 ## What changed? (`GET /recordings/<id>/events.json`)
 
