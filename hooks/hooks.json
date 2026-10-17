@@ -1,0 +1,20 @@
+{
+  "description": "basecamp-manager guard: blocks deletes, writes to cards that are not yours, and any use of the Basecamp credentials outside curl",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|MultiEdit|NotebookEdit|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["-I", "${CLAUDE_PLUGIN_ROOT}/scripts/guard.py"],
+            "timeout": 30,
+            "onFailure": "block",
+            "statusMessage": "Basecamp guard"
+          }
+        ]
+      }
+    ]
+  }
+}

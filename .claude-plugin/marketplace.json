@@ -1,0 +1,15 @@
+{
+  "name": "basecamp-manager",
+  "description": "Basecamp Manager for Claude Code: safe Basecamp card management with a guard hook",
+  "owner": {
+    "name": "Austin Airton Linares Castillo",
+    "url": "https://github.com/AustinLinares"
+  },
+  "plugins": [
+    {
+      "name": "basecamp-manager",
+      "source": "./",
+      "description": "Read and manage Basecamp cards from Claude Code, with a guard hook that blocks deletes and writes to anything that is not yours"
+    }
+  ]
+}

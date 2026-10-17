@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+# Never commit real credentials or a real config
+token
+oauth.json
+config.json
+
+# Local design notes, not published
+PROJECT.md

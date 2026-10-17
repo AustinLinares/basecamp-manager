@@ -1,0 +1,24 @@
+{
+  "account_id": 1234567,
+  "person_id": 12345678,
+  "user_agent": "basecamp-manager (you@example.com)",
+  "board": {
+    "name": "My board",
+    "project_id": 11111111,
+    "card_table_id": 22222222,
+    "columns": {
+      "triage": 33333301,
+      "todo": 33333302,
+      "in_progress": 33333303,
+      "in_review": 33333304,
+      "done": 33333305
+    }
+  },
+  "guard": {
+    "protected_columns": [33333303, 33333304, 33333305]
+  },
+  "workflow": {
+    "title_prefixes": ["[Frontend]", "[Backend]", "[Fullstack]"],
+    "pr_line": "PR: <link>"
+  }
+}

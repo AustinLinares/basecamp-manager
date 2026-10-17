@@ -1,0 +1,48 @@
+{
+  "name": "basecamp-manager",
+  "displayName": "Basecamp Manager",
+  "version": "0.1.0",
+  "description": "Read and manage Basecamp cards from Claude Code, with a guard hook that blocks deletes and writes to anything that is not yours",
+  "author": {
+    "name": "Austin Airton Linares Castillo",
+    "url": "https://github.com/AustinLinares"
+  },
+  "homepage": "https://github.com/AustinLinares/basecamp-manager",
+  "repository": "https://github.com/AustinLinares/basecamp-manager",
+  "license": "MIT",
+  "keywords": ["basecamp", "cards", "kanban", "guard", "hooks", "security"],
+  "userConfig": {
+    "allow_claim": {
+      "type": "boolean",
+      "title": "Allow claiming unassigned cards",
+      "description": "Let Claude assign an unassigned card to you (one write, only when you ask). Cards in protected columns can never be claimed.",
+      "default": true
+    },
+    "allow_comments": {
+      "type": "boolean",
+      "title": "Allow creating comments",
+      "description": "Let Claude post comments on your cards. Comments can never be edited or removed.",
+      "default": true
+    },
+    "own_unassigned_edit_minutes": {
+      "type": "number",
+      "title": "Edit window for your unassigned cards (minutes)",
+      "description": "How long a card you created, still without assignees, stays editable. 0 means no time limit (it stays editable until it is assigned or reaches a protected column).",
+      "default": 0,
+      "min": 0,
+      "max": 10080
+    },
+    "card_language": {
+      "type": "string",
+      "title": "Language for card text",
+      "description": "Language Claude uses when it writes card titles, steps and comments. 'auto' follows the language you write in.",
+      "default": "auto"
+    },
+    "use_workflow": {
+      "type": "boolean",
+      "title": "Use the suggested card workflow",
+      "description": "Follow the optional workflow conventions (a card per task, one-line steps, PR comment and move to review). Off by default.",
+      "default": false
+    }
+  }
+}
