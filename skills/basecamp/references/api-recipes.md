@@ -21,6 +21,12 @@ Checked against the official docs (github.com/basecamp/bc3-api) on 2026-10-17, B
 | Comments of a card | `GET /recordings/<card_id>/comments.json` (paginated) | `.[] \| {creator: .creator.name, created_at, content}` |
 | People in the account | `GET /people.json` | `.[] \| {id, name}` |
 | An attached image | `GET /blobs/<uuid>/download/<file>` with `curl -sL -o <file>` | open it with Read |
+| Everything assigned to me | `GET /my/assignments.json` (also `/my/assignments/due.json?scope=overdue`, `/my/assignments/completed.json`) | `[.priorities[], .non_priorities[]] \| .[] \| {id, title: .content, due_on, column: .parent.title}` |
+| Search | `GET /search.json?q=<url-encoded text>` | `.[] \| {id, type, title: (.title // .content), parent: .parent.title}` |
+| Activity of a card | `GET /recordings/<card_id>/events.json` | `.[] \| {created_at, who: .creator.name, action, details}` |
+| My notifications | `GET /my/readings.json` | `.unreads[] \| {type, title, project: .bucket_name, from: .creator.name, url: .app_url}` |
+
+The four reads above are explained in [briefing.md](briefing.md).
 
 Paginated lists send a `Link: <...>; rel="next"` header; add `-D -` to see it and keep reading until
 there is none.

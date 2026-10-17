@@ -61,7 +61,8 @@ T=$(cat ~/.config/basecamp-manager/token); curl -s \
 - Writes add `-H "Content-Type: application/json"` and `-X PUT` or `-X POST`.
 - Long or accented JSON bodies: write the body to a file in the scratchpad with the Write tool, check
   it with `jq -e . <file>`, send it with `-d @<file>`.
-- One `curl` per segment. Chain calls with `&&`. Piping a read into `jq` is fine.
+- One `curl` per segment. Chain calls with `&&`. Piping a read into `jq` is fine. A URL with several
+  query parameters (`?q=a&page=2`) must be in quotes with no `$(...)` or backtick inside.
 - Never write a command that mentions the API host without being that `curl` (no `echo`, heredoc,
   `python`, `bash -c`, `xargs`). Create files with the Write tool instead.
 - Use the flat routes (`/card_tables/cards/1.json`). The legacy `/buckets/<project>/...` form also works.
@@ -92,6 +93,9 @@ with `GET /recordings/<card_id>/comments.json`.
   Show the user which files and where before uploading. See api-recipes.
 - **Append to the description:** rebuild the content from a GET so attachments survive (pitfalls).
 - **Triage a column or a list of cards:** follow [references/triage.md](references/triage.md).
+- **"What do I have today?", a standup, "is there already a card about X?", "what changed on this
+  card?", "what did I miss?":** follow [references/briefing.md](references/briefing.md). Search before
+  creating a card. All of it is read-only.
 - **Cards that come up mid-task** (a bug, a pending item): propose the card or the step right when it
   appears, with the content ready, instead of leaving it for later. Mark steps done as work finishes.
 

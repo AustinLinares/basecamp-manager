@@ -324,11 +324,58 @@ def check_upload(tokens, url, config):
         raise Deny("the upload needs ?name=<file name> with an image, video or PDF extension")
 
 
+AMPERSAND = "\x00"
+
+
+def protect_ampersands(command):
+    """Hides the & of a quoted literal (a URL with several query parameters) from the segment
+    splitter. Only a & inside a properly closed quote with no expansion in it is hidden, because the
+    shell reads it as plain text there. Anything that could put this scan out of step with the shell
+    (comments, backticks, $(...) other than the token read, ${, $'...', an unclosed quote) returns the
+    command untouched, so those commands keep being split at every & and fail closed."""
+    out, i, n = [], 0, len(command)
+    while i < n:
+        c = command[i]
+        if c == "\\":
+            out.append(command[i:i + 2])
+            i += 2
+        elif c in "#`":
+            return command
+        elif c == "$":
+            following = command[i + 1:i + 2]
+            if following in ("'", '"', "{") or (following == "(" and not command.startswith("$(TOKEN)", i)):
+                return command
+            out.append(c)
+            i += 1
+        elif c == "'":
+            end = command.find("'", i + 1)
+            if end == -1:
+                return command
+            out.append(command[i:end + 1].replace("&", AMPERSAND))
+            i = end + 1
+        elif c == '"':
+            j = i + 1
+            while j < n and command[j] != '"':
+                if command[j] in "`" or command.startswith("$(", j) and not command.startswith("$(TOKEN)", j):
+                    return command
+                j += 2 if command[j] == "\\" else 1
+            if j >= n:
+                return command
+            span = command[i:j + 1]
+            out.append(span if "$" in span else span.replace("&", AMPERSAND))
+            i = j + 1
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
 def check_bash(command, config):
     command, token_names = check_secrets(command, config)
     if HOST not in command and "$(TOKEN)" not in command:
         return
-    for segment in SEPARATORS.split(command):
+    for segment in SEPARATORS.split(protect_ampersands(command)):
+        segment = segment.replace(AMPERSAND, "&")
         if HOST in segment:
             check_segment(segment, config)
         elif TOKEN_ASSIGNMENT.match(segment):

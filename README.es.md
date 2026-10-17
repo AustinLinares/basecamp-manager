@@ -25,6 +25,10 @@ Con el plugin, Claude puede:
   algo que queda pendiente. Claude crea la tarjeta o agrega el paso en cuanto aparece, y marca los
   pasos como hechos a medida que avanza el trabajo, así nadie tiene que detenerse a actualizar
   Basecamp a mano.
+- **Ponerte al día en un minuto.** "¿Qué tengo hoy?" lee tus asignaciones de todos los proyectos y
+  te da lo vencido, lo de hoy, lo que está en progreso y en revisión. Claude también busca antes de
+  crear una tarjeta (para evitar duplicados), muestra qué cambió en una tarjeta y resume tus
+  notificaciones sin leer.
 - **Adjuntar la evidencia.** Cuando se abre un PR, Claude comenta en la tarjeta con el enlace, qué
   cambió, cómo se verificó y qué sigue pendiente, con las capturas o grabaciones insertadas en el mismo
   comentario. Los pasos le indican al equipo qué falta por demostrar.
@@ -87,7 +91,7 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 
 | | Versión |
 |---|---|
-| Plugin | **0.3.1** (ver [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.4.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 o superior** (necesita `onFailure: "block"` para que el guardia falle cerrado). Probado en 2.1.301 |
 | API de Basecamp | API de Basecamp 5 (`3.basecampapi.com`), endpoints verificados en la [documentación oficial](https://github.com/basecamp/bc3-api) el 2026-10-17 |
 | Python | 3.8 o superior, solo biblioteca estándar (ejecuta el guardia) |

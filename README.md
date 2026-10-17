@@ -23,6 +23,9 @@ With the plugin, Claude can:
 - **Keep the board current while you work.** Cards come up mid-task: a bug, something left pending.
   Claude creates the card or adds the step as soon as it appears, and marks steps as done as the work
   moves forward, so nobody has to stop to update Basecamp by hand.
+- **Brief you in a minute.** "What do I have today?" reads your assignments across projects and
+  gives overdue, due today, in progress and in review. Claude also searches before creating a card
+  (to avoid duplicates), shows what changed on a card, and summarizes your unread notifications.
 - **Attach the evidence.** When a PR opens, Claude comments on the card with the link, what changed,
   how it was verified and what is still pending, with the screenshots or recordings embedded right in
   the comment. The steps tell the team what still needs proof.
@@ -84,7 +87,7 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 
 | | Version |
 |---|---|
-| Plugin | **0.3.1** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.4.0** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |

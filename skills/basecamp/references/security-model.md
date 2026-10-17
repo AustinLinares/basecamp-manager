@@ -14,6 +14,7 @@ The guard is a `PreToolUse` hook that runs before every Bash, Read, Edit, Write 
 | Uploads | One image, video or PDF per call, from a file outside the credentials directory, if `allow_uploads`; it appears only where one of your cards embeds it |
 | Allowlist | Any write to an endpoint not on the list, or with another method, is denied |
 | curl only | A command that mentions the API host must start with `curl`; `echo`, `python`, `bash -c`, `xargs` are denied |
+| Separators | Commands are split at `&`, `;`, `|` and newlines and every piece that mentions the host is checked. A `&` inside a closed quote with no expansion is plain text (`?q=a&page=2`); with a comment, backtick, `$(...)`, `${`, `$'` or an unclosed quote nearby, every `&` splits |
 | Literal URLs | A write must target exactly one literal URL inside the configured account |
 | Credentials | The token is only readable as `$(cat <token>)` feeding a curl to the API host; `oauth.json` is never readable; Read, Edit, Write and Grep on them are denied |
 | Fail closed | If a card cannot be verified, the config is broken, or the guard crashes, the action is blocked |

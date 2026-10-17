@@ -353,6 +353,51 @@ class TestShellShapes(GuardTestCase):
         self.assertAllowed(self.bash("git status && ls -la"))
 
 
+class TestQuotedAmpersand(GuardTestCase):
+    """A & inside a closed, expansion-free quote is text (several query parameters); anywhere else
+    it still separates commands, and anything ambiguous keeps failing closed."""
+
+    def test_double_quoted_url_with_two_parameters(self):
+        self.assertAllowed(self.bash(f'curl -s "{BASE}/search.json?q=luz&type=Kanban%3A%3ACard" | jq length'))
+
+    def test_single_quoted_url_with_two_parameters(self):
+        self.assertAllowed(self.bash(f"curl -s '{BASE}/search.json?q=luz&page=2'"))
+
+    def test_token_read_next_to_a_quoted_url(self):
+        command = f'T=$(cat {self.token}); curl -s -H "Authorization: Bearer $T" "{BASE}/search.json?q=a&page=2"'
+        self.assertAllowed(self.bash(command))
+
+    def test_unquoted_ampersand_still_separates(self):
+        command = f"curl -s {BASE}/search.json?q=a & curl -X DELETE {BASE}/card_tables/cards/20.json"
+        self.assertDenied(self.bash(command), "deleting")
+
+    def test_delete_after_a_quoted_url(self):
+        command = f'curl -s "{BASE}/search.json?q=a&page=2" & curl -X DELETE {BASE}/card_tables/cards/20.json'
+        self.assertDenied(self.bash(command), "deleting")
+
+    def test_delete_inside_a_quoted_url_is_still_a_delete(self):
+        self.assertDenied(self.bash(f'curl -X DELETE "{BASE}/card_tables/cards/20.json?a=1&b=2"'), "deleting")
+
+    def test_quote_closed_early_does_not_hide_the_ampersand(self):
+        command = f'curl -s "a"{BASE}/x&curl -X DELETE {BASE}/card_tables/cards/20.json""'
+        self.assertDenied(self.bash(command), "deleting")
+
+    def test_ampersand_next_to_a_command_substitution_fails_closed(self):
+        self.assertDenied(self.bash(f'curl -s "{BASE}/search.json?q=$(echo a)&page=2"'), "parse")
+
+    def test_ampersand_next_to_a_backtick_fails_closed(self):
+        self.assertDenied(self.bash(f'curl -s "{BASE}/search.json?q=`echo a`&page=2"'), "parse")
+
+    def test_ampersand_before_a_comment_fails_closed(self):
+        self.assertDenied(self.bash(f'curl -s "{BASE}/search.json?q=a&page=2" # it\'s'), "parse")
+
+    def test_unclosed_quote_fails_closed(self):
+        self.assertDenied(self.bash(f'curl -s "{BASE}/search.json?q=a&page=2'), "parse")
+
+    def test_ansi_c_quote_fails_closed(self):
+        self.assertDenied(self.bash(f"curl -s $'{BASE}/search.json?q=a&page=2'"), "parse")
+
+
 class TestSecrets(GuardTestCase):
 
     def test_token_variable_used_by_curl(self):

@@ -6,6 +6,26 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-17
+
+### Added
+
+- Briefing, search, activity and notifications (`skills/basecamp/references/briefing.md`), all
+  read-only and checked against the live API: `GET /my/assignments.json` (plus `due.json` with a
+  scope and `completed.json`), `GET /search.json?q=`, `GET /recordings/<id>/events.json` and
+  `GET /my/readings.json`. The skill points to them for "what do I have today?", standups, searching
+  before creating a card, "what changed on this card?" and "what did I miss?". No guard change was
+  needed: reads already pass.
+- 12 tests for the quoted-ampersand rule (104 in total).
+
+### Changed
+
+- The guard no longer splits a command at a `&` that sits inside a closed quote with no expansion, so
+  URLs with several query parameters (`?q=a&page=2`, needed for search filters and pagination) work.
+  The scan is conservative: a comment, backtick, `$(...)` other than the token read, `${`, `$'` or an
+  unclosed quote leaves the command untouched, and every `&` keeps separating commands. A `&` outside
+  quotes, a delete after a quoted URL and a quote closed early are still denied.
+
 ## [0.3.1] - 2026-10-17
 
 ### Changed
