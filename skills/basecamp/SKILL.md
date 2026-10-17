@@ -20,7 +20,8 @@ If `BASECAMP_MANAGER_HOME` is set, that directory replaces `~/.config/basecamp-m
 ## 1. Before anything: is it set up?
 
 Read `~/.config/basecamp-manager/config.json` with the Read tool. If it is missing or lacks
-`account_id`, `person_id` or `user_agent`, or the user asks to set up, follow
+`account_id`, `person_id` or `user_agent`, the token file does not exist, or the user asks to set
+up, follow
 [references/setup.md](references/setup.md) before doing anything else. Reads work before setup; the
 guard blocks every write until `account_id` and `person_id` exist.
 
@@ -92,9 +93,12 @@ Column ids are in `board.columns` of config.json. To list columns, GET the card 
 
 If `${user_config.use_workflow}` is `true`, also follow [references/workflow.md](references/workflow.md).
 
-## 6. Token expiry
+## 6. Token expiry and health
 
-Access tokens last two weeks. A `401` means it expired: tell the user to run the refresh in their own
-terminal (setup, section "Refresh"). Do not try to refresh it yourself.
+Access tokens last two weeks. A `401` means it expired: run `~/.config/basecamp-manager/bcm refresh`
+(it prints no secret), then retry the read. If the refresh fails, the user runs
+`~/.config/basecamp-manager/bcm login` in their own terminal; never run `login` yourself, it is
+interactive and asks for the secret. When something looks wrong, run
+`~/.config/basecamp-manager/bcm doctor` and follow what it reports.
 
 The security model and its honest limits: [references/security-model.md](references/security-model.md).

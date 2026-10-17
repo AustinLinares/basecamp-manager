@@ -8,28 +8,29 @@ that are already done.
 ## 0. Check what exists
 
 ```bash
-command -v curl jq python3; ls -l ~/.config/basecamp-manager/ 2>/dev/null
+~/.config/basecamp-manager/bcm doctor
 ```
 
-- `curl`, `jq` and `python3` are required. On Windows, `python3` must resolve (Git Bash or WSL);
-  if only `py` or `python` exists, tell the user the guard cannot run and point them to the
-  troubleshooting section of the README.
-- `token` present and `600`: skip to step 3. Never `cat` it; `ls -l` is enough.
-- `config.json` complete (`account_id`, `person_id`, `user_agent`, `guard.protected_columns`): skip to step 5.
+The doctor prints what is missing and how to fix it; it never prints a secret. If
+`~/.config/basecamp-manager/bcm` does not exist, the session hook has not run yet: use
+`python3 -I "${CLAUDE_PLUGIN_ROOT}/scripts/bcm.py" doctor` and tell the user to restart Claude Code
+once. Skip every step the doctor reports as ok. Never `cat` the token; the doctor is enough.
 
 ## 1. OAuth app and token (the user does this, in their own terminal)
 
-Tell the user to follow `docs/SETUP.md` sections 1 to 3. Summarize what they will do:
+Basecamp's current API has no personal API keys; the user needs an OAuth app of their own. Tell them
+to follow `docs/SETUP.md` steps 2 and 3, and summarize:
 
 1. Register an app at `https://launchpad.37signals.com/integrations` with redirect URI
-   `http://localhost/oauth`. Keep `client_id` and `client_secret` in a password manager.
-2. Open the authorization URL, approve, and copy the `code` from the address bar (the browser shows a
-   connection error; that is expected).
-3. Run the token exchange **in their own terminal**, which writes `oauth.json` and `token` without
-   printing them.
+   `http://localhost:8765/oauth`. Keep `client_id` and `client_secret` in a password manager.
+2. In **their own terminal** (not here, because it asks for the secret), run
+   `~/.config/basecamp-manager/bcm login`. It opens the browser, catches the authorization on
+   localhost, and saves the token without printing it.
+3. Come back and say when it is done. Then run the doctor again.
 
-Never ask for the `client_secret`, the `code` or a token in the chat. If the user pastes one, tell
-them to revoke the app's access in Launchpad and start over, and do not use the pasted value.
+`bcm login` is interactive: never run it yourself. Never ask for the `client_secret`, the `code` or a
+token in the chat. If the user pastes one, tell them to regenerate the secret in Launchpad and log in
+again, and do not use the pasted value.
 
 **Optional guided mode with Claude in Chrome.** If the user wants it and the browser tools are
 available, you can open the Launchpad integrations page and explain each field. Limits: you never type
@@ -48,9 +49,8 @@ Bash(curl * https://3.basecampapi.com/*)
 
 ## 3. Discover the ids (you do this, with reads)
 
-Use the common call shape from SKILL.md. Before the config exists, use a provisional User-Agent such
-as `basecamp-manager setup (<user's email>)`; ask the user which email to use, since Basecamp asks for
-a contact in the User-Agent.
+Use the common call shape from SKILL.md, with the `user_agent` that `bcm login` already saved in
+config.json. If it is missing, ask the user for an email and use `basecamp-manager (<email>)`.
 
 1. Accounts: `GET https://3.basecampapi.com/authorization.json` and keep the
    `accounts[] | select(.product == "bc3") | {id, name}`. Ask which one if there are several.
@@ -67,19 +67,21 @@ Ask the user to map the columns (triage, todo, in progress, in review, done; any
 which columns are **protected**: cards there cannot be claimed, and the user's own unassigned cards
 stop being editable there. Suggest in progress, in review and every done or closing column.
 
-Build the JSON following `${CLAUDE_PLUGIN_ROOT}/config/config.example.json`, show it, and after the
-user approves write it with the Write tool to `~/.config/basecamp-manager/config.json`. It holds no
-secrets. Leave out `workflow` unless the user wants the workflow conventions.
+Build the JSON following `${CLAUDE_PLUGIN_ROOT}/config/config.example.json`, keeping every key the
+existing config.json already has (at least `user_agent`), show it, and after the user approves write
+it with the Write tool to `~/.config/basecamp-manager/config.json`. It holds no secrets. Leave out
+`workflow` unless the user wants the workflow conventions.
 
 ## 5. Verify
 
-1. A read works: GET one card of the board and show its title.
-2. The guard is active: run `echo "https://3.basecampapi.com/guard-check"`. The guard must deny it
-   ("may only be called by a command that starts with curl"). If it prints the text instead, the
-   plugin is not enabled: tell the user to check `/plugin` and restart Claude Code. **Never test the
-   guard with a real DELETE or any real write.**
-3. Token expiry: `GET https://3.basecampapi.com/authorization.json | jq .expires_at`. Tell the user
-   the date and that the refresh is in `docs/SETUP.md`, section "Refresh".
+1. Run `~/.config/basecamp-manager/bcm doctor`. Every line should say ok; fix what it reports.
+2. A read works: GET one card of the board and show its title.
+3. The guard is active in this session: run `echo "https://3.basecampapi.com/guard-check"`. The guard
+   must deny it ("may only be called by a command that starts with curl"). If it prints the text
+   instead, the plugin is not enabled: tell the user to check `/plugin` and restart Claude Code.
+   **Never test the guard with a real DELETE or any real write.**
+4. Tell the user how many days the token has left (the doctor prints it) and that
+   `bcm refresh` renews it; you will remind them when fewer than three days are left.
 
 ## 6. Rules the user can change
 

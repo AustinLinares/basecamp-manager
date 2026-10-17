@@ -1,11 +1,11 @@
 # Setup guide
 
-This takes about ten minutes, once per person and machine. Your credentials stay on your computer:
-nothing here is pasted into the Claude chat, and nothing is committed anywhere.
+About ten minutes, once per person and machine. Your credentials stay on your computer: nothing here
+is pasted into the Claude chat, and nothing is committed anywhere.
 
 You will end up with four values:
 
-| Thing | What it is | Where it lives |
+| Value | What it is | Where it lives |
 |---|---|---|
 | `client_id` | The public id of **your own** OAuth app at 37signals. Identifies the app, not you | Your password manager, and `oauth.json` |
 | `client_secret` | The app's password. Whoever has it can impersonate your app | Your password manager, and `oauth.json` |
@@ -16,16 +16,30 @@ Both files are created with permissions `600` (only your user can read them) in 
 The guard hook stops Claude from reading `oauth.json` at all, and from reading the token other than
 to send it to Basecamp.
 
-> Claude can walk you through all of this: install the plugin and say "set up Basecamp". It runs the
-> discovery for you and tells you when to switch to your own terminal.
+> Basecamp's current API has no personal API keys: an OAuth app of your own is the only way in.
 
 ## Requirements
 
 - A Basecamp account with access to the board you want to use.
 - Claude Code **2.1.295 or later** (`claude --version`).
-- `curl`, `jq` and `python3` on your `PATH`. On Windows, use Git Bash or WSL so `python3` resolves.
+- `curl`, `jq` and Python **3.8 or later** on your `PATH`. On Windows, use Git Bash or WSL.
 
-## 1. Register your OAuth app
+## 1. Install the plugin
+
+In Claude Code:
+
+```
+/plugin marketplace add AustinLinares/basecamp-manager
+/plugin install basecamp-manager@basecamp-manager
+```
+
+or in your terminal: `claude plugin marketplace add AustinLinares/basecamp-manager` and then
+`claude plugin install basecamp-manager@basecamp-manager`.
+
+Then **start a new Claude Code session** (or run `/reload-plugins`). On start, the plugin creates the
+`bcm` command at `~/.config/basecamp-manager/bcm`, which the next steps use.
+
+## 2. Register your OAuth app
 
 1. Open <https://launchpad.37signals.com/integrations> and sign in with your Basecamp login.
 2. Click **Register one now** (or **Register another application**).
@@ -33,57 +47,39 @@ to send it to Basecamp.
    - **Name of your application:** anything, e.g. `My Claude Code`. Basecamp shows it when you
      authorize, and in your list of connected apps.
    - **Your company's name / website:** anything; they are only displayed.
-   - **Products:** tick **Basecamp** (shown as Basecamp 5 or 4 depending on the moment; it is the one
-     whose API this plugin uses).
-   - **Redirect URI:** `http://localhost/oauth`. If the form rejects it, use `https://localhost/oauth`
-     and use that same value everywhere below. **Never use someone else's domain:** the authorization
+   - **Products:** tick **Basecamp**.
+   - **Redirect URI:** `http://localhost:8765/oauth`. With a port, `bcm login` catches the
+     authorization by itself. If the form rejects it, use `http://localhost/oauth`; then you paste the
+     address from the browser bar instead. **Never use someone else's domain:** the authorization
      code would travel to that server.
 4. Click **Register this app**. The next page shows your **Client ID** and **Client Secret**. Save
    both in your password manager now.
 
-## 2. Authorize and copy the code
+## 3. Log in (in your own terminal)
 
-Open this URL in your browser, replacing `YOUR_CLIENT_ID`:
-
-```
-https://launchpad.37signals.com/authorization/new?response_type=code&client_id=YOUR_CLIENT_ID&redirect_uri=http%3A%2F%2Flocalhost%2Foauth
-```
-
-Click **Yes, I'll allow access**. The browser lands on `http://localhost/oauth?code=...` and shows a
-connection error. **That is expected:** nothing listens there. The `code` is in the address bar.
-Copy it and do step 3 right away; it expires within minutes and works only once.
-
-## 3. Exchange the code for a token (in your own terminal)
-
-Open a regular terminal, **not** the Claude chat, and paste this block. It asks for the three values
-without echoing the secret, never prints a token, and keeps the secret out of your shell history.
+Open a regular terminal, **not** the Claude chat, and run:
 
 ```bash
-mkdir -p ~/.config/basecamp-manager && chmod 700 ~/.config/basecamp-manager && cd ~/.config/basecamp-manager
-umask 077
-printf 'client_id: '; read -r CLIENT_ID
-printf 'client_secret: '; stty -echo; read -r CLIENT_SECRET; stty echo; echo
-printf 'code: '; read -r CODE
-curl -s -X POST https://launchpad.37signals.com/authorization/token \
-  -d grant_type=authorization_code -d redirect_uri=http://localhost/oauth \
-  --data-urlencode "client_id=$CLIENT_ID" --data-urlencode "client_secret=$CLIENT_SECRET" \
-  --data-urlencode "code=$CODE" > response.json
-if jq -e .access_token response.json >/dev/null; then
-  jq --arg id "$CLIENT_ID" --arg secret "$CLIENT_SECRET" '. + {client_id: $id, client_secret: $secret}' response.json > oauth.json
-  jq -r .access_token oauth.json > token
-  echo "Saved. Token valid for $(( $(jq .expires_in oauth.json) / 86400 )) days."
-else
-  echo "The exchange failed:"; jq . response.json
-fi
-rm -f response.json; unset CLIENT_ID CLIENT_SECRET CODE
+~/.config/basecamp-manager/bcm login
 ```
 
-If you used `https://localhost/oauth` in step 1, change `redirect_uri` in the block to match.
+It asks for the Client ID, the Client Secret (hidden while you type), the redirect URI from step 2,
+and an email for the `User-Agent` header Basecamp requires. Then it opens your browser:
+
+1. Click **Yes, I'll allow access**.
+2. With `http://localhost:8765/oauth`, the tab says "Basecamp authorized" and the terminal continues
+   by itself. macOS may ask whether Python can accept incoming connections: allow it (it only listens
+   on your own machine, for one request, for at most five minutes).
+3. With `http://localhost/oauth`, the tab shows a connection error. That is expected: copy the full
+   address from the bar and paste it in the terminal. The code inside expires within minutes.
+
+`bcm login` saves the token, prints how many days it lasts and which Basecamp accounts it reaches. It
+never prints a token or the secret.
 
 ## 4. Allow curl to Basecamp in Claude Code
 
-In Claude Code, run `/permissions`, open the **Allow** tab, choose **Add a new rule**, save it at user
-level:
+In Claude Code, run `/permissions`, open the **Allow** tab, choose **Add a new rule**, and save it at
+user level:
 
 ```
 Bash(curl * https://3.basecampapi.com/*)
@@ -91,22 +87,26 @@ Bash(curl * https://3.basecampapi.com/*)
 
 Without it, Claude Code asks you to approve every read.
 
-## 5. Let Claude discover your ids
+## 5. Let Claude pick your board
 
-Back in Claude Code, say **"set up Basecamp"**. Claude reads (never writes) your accounts, your
-person id, your projects and board columns, asks you which columns are **protected** (in progress, in
-review, done: cards there cannot be claimed), shows you the resulting `config.json` and writes it to
+Back in Claude Code, say **"set up Basecamp"**. Claude reads (never writes) your accounts, your person
+id, your projects and board columns, asks you which columns are **protected** (in progress, in review,
+done: cards there cannot be claimed), shows you the resulting `config.json` and writes it to
 `~/.config/basecamp-manager/config.json` after you approve. That file has ids only, no secrets.
 
-If you prefer to do it by hand, copy `config/config.example.json` from this repository and fill it in.
-Your **person id** comes from `GET /my/profile.json` in your account. It is not the `identity.id` that
+To do it by hand instead, copy `config/config.example.json` from this repository and fill it in. Your
+**person id** comes from `GET /my/profile.json` in your account. It is not the `identity.id` that
 Launchpad shows; mixing them up makes the guard reject every write.
 
 ## 6. Check it works
 
-Claude finishes setup by reading one card and running a harmless command that mentions the Basecamp
-host outside `curl`. The guard must deny it. If it does not, open `/plugin`, make sure
-`basecamp-manager` is enabled, and restart Claude Code. **Never test the guard with a real DELETE.**
+```bash
+~/.config/basecamp-manager/bcm doctor
+```
+
+It checks Python, `curl` and `jq`, file permissions, the config, that Basecamp accepts the token,
+that `person_id` matches your profile, the days left on the token, and that the guard denies a
+simulated delete. Nothing is written to Basecamp. Claude can run it for you too.
 
 ## Choose your rules
 
@@ -125,28 +125,26 @@ partially disabled; to turn it off you disable the whole plugin.
 
 ## Refresh (every two weeks)
 
-When Claude reports a `401`, or before the date Claude gave you at setup, run this in your own
-terminal:
-
 ```bash
-cd ~/.config/basecamp-manager && umask 077
-curl -s -X POST https://launchpad.37signals.com/authorization/token -d grant_type=refresh_token \
-  --data-urlencode "refresh_token=$(jq -r .refresh_token oauth.json)" \
-  --data-urlencode "client_id=$(jq -r .client_id oauth.json)" \
-  --data-urlencode "client_secret=$(jq -r .client_secret oauth.json)" > response.json
-if jq -e .access_token response.json >/dev/null; then
-  jq -s '.[0] * .[1]' oauth.json response.json > oauth.new && mv oauth.new oauth.json
-  jq -r .access_token oauth.json > token && echo "Token refreshed."
-else
-  echo "Refresh failed:"; jq . response.json
-fi
-rm -f response.json
+~/.config/basecamp-manager/bcm refresh
 ```
 
-If the refresh token itself stops working, repeat steps 2 and 3.
+Claude reminds you at the start of a session when fewer than three days are left, and can run the
+refresh itself (it prints no secret). If the refresh token stops working, run `bcm login` again; it
+offers to reuse your saved app.
 
 ## If a secret leaks
 
 If a token or the client secret ever ends up in a chat, a commit or a screenshot: open
-<https://launchpad.37signals.com/integrations>, open your app and revoke or regenerate its secret
-(or remove the app's access from your account), then redo steps 1 to 3.
+<https://launchpad.37signals.com/integrations>, open your app and regenerate its secret (or remove the
+app's access from your account), then run `bcm login` again with the new values.
+
+## Troubleshooting setup
+
+| Symptom | Fix |
+|---|---|
+| `~/.config/basecamp-manager/bcm: No such file` | Start a Claude Code session once after installing the plugin |
+| `port 8765 is busy` | Close what uses it, or register another port in your app and run `bcm login --redirect-uri http://localhost:<port>/oauth` |
+| The browser says the redirect URI does not match | The URI you typed in `bcm login` must be exactly the one registered in step 2 |
+| `authorization refused` | You clicked "No" or closed the page; run `bcm login` again |
+| The exchange answers 400 or `invalid_grant` | The code expired or was already used; run `bcm login` again |

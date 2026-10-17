@@ -1,5 +1,5 @@
 {
-  "description": "basecamp-manager guard: blocks deletes, writes to cards that are not yours, and any use of the Basecamp credentials outside curl",
+  "description": "basecamp-manager: the guard blocks deletes, writes to cards that are not yours, and any use of the Basecamp credentials outside curl; the session hook keeps the bcm launcher current and warns before the token expires",
   "hooks": {
     "PreToolUse": [
       {
@@ -7,11 +7,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3",
-            "args": ["-I", "${CLAUDE_PLUGIN_ROOT}/scripts/guard.py"],
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/guard.sh\"",
             "timeout": 30,
             "onFailure": "block",
             "statusMessage": "Basecamp guard"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "command -v python3 >/dev/null 2>&1 && python3 -I \"${CLAUDE_PLUGIN_ROOT}/scripts/session_start.py\" || true",
+            "timeout": 10
           }
         ]
       }

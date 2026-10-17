@@ -29,8 +29,18 @@ In Claude Code:
 /plugin install basecamp-manager@basecamp-manager
 ```
 
-Claude Code asks for the plugin options (you can keep the defaults), then say **"set up Basecamp"**
-and follow [docs/SETUP.md](docs/SETUP.md). The guard is active as soon as the plugin is enabled.
+Claude Code asks for the plugin options (you can keep the defaults). Start a new session, then follow
+[docs/SETUP.md](docs/SETUP.md): register your OAuth app, run `~/.config/basecamp-manager/bcm login` in
+your terminal, and say **"set up Basecamp"** in Claude Code. The guard is active as soon as the plugin
+is enabled.
+
+The plugin's command line, always at `~/.config/basecamp-manager/bcm`:
+
+| Command | What it does |
+|---|---|
+| `bcm login` | Opens the browser, catches the authorization on localhost and saves the token without printing it |
+| `bcm refresh` | Renews the access token (every two weeks; Claude reminds you and can run it) |
+| `bcm doctor` | Checks tools, permissions, config, token, person id and the guard |
 
 Updates: run `/plugin`, **Marketplaces**, select `basecamp-manager`, and turn on auto-update, or
 update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
@@ -39,12 +49,12 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 
 | | Version |
 |---|---|
-| Plugin | **0.1.0** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.2.0** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |
 | Tools | `curl`, `jq` |
-| OS | Tested on macOS. Linux should work. Windows needs Git Bash or WSL with `python3` on the `PATH` (untested) |
+| OS | Tested on macOS. Linux should work. Windows needs Git Bash or WSL (untested) |
 
 ## What the guard enforces
 
@@ -79,6 +89,8 @@ Rules are configurable per person: plugin options in `/plugin` and `guard.protec
   config.json   ids and rules, no secrets
   token         access token (600)
   oauth.json    refresh token and OAuth app credentials (600), never readable by Claude
+  token-info.json  token expiry date only
+  bcm           launcher for the plugin's command line, kept current by the plugin
 ```
 
 `BASECAMP_MANAGER_HOME` overrides the directory. Nothing is stored in this repository.
@@ -86,7 +98,7 @@ Rules are configurable per person: plugin options in `/plugin` and `guard.protec
 ## Development
 
 ```bash
-python3 -m unittest discover -s tests     # guard tests, nothing reaches Basecamp
+python3 -m unittest discover -s tests     # 79 tests, nothing reaches Basecamp
 claude plugin validate .                   # marketplace manifest
 claude plugin validate .claude-plugin/plugin.json
 claude --plugin-dir .                      # try the plugin without installing it
@@ -96,8 +108,11 @@ Layout:
 
 ```
 .claude-plugin/   plugin.json (manifest, options) and marketplace.json
-hooks/hooks.json  registers the guard
+hooks/hooks.json  registers the guard and the session hook
+scripts/guard.sh  finds Python and starts the guard
 scripts/guard.py  the guard
+scripts/bcm.py    login, refresh, doctor
+scripts/session_start.py  keeps the bcm launcher current, warns before the token expires
 skills/basecamp/  the skill and its references
 config/           config.example.json
 docs/SETUP.md     setup guide
@@ -108,11 +123,12 @@ tests/            guard tests
 
 | Symptom | Cause and fix |
 |---|---|
-| Every tool call is blocked with a hook error | The guard could not start, usually because `python3` is not on the `PATH`. Install Python 3 or disable the plugin |
+| "Python 3.8 or later was not found" | Without Python the guard blocks only Basecamp access; install Python 3 and restart Claude Code |
 | `ERR_CONNECTION_REFUSED` after authorizing | Expected. The `code` is in the address bar |
 | The token exchange fails | The `code` expired or was already used. Authorize again |
 | HTTP 400 | Missing `User-Agent` |
-| HTTP 401 | The token expired. See "Refresh" in [docs/SETUP.md](docs/SETUP.md) |
+| HTTP 401 | The token expired. Run `~/.config/basecamp-manager/bcm refresh` |
+| Anything else | Run `~/.config/basecamp-manager/bcm doctor` |
 | "not configured" | `config.json` lacks `account_id` or `person_id`. Say "set up Basecamp" |
 | A legitimate write is blocked | The card is not assigned to you, it is in a protected column, or the endpoint is not on the allowlist |
 | A card I assigned to someone else is now read-only | By design. Assign to others last |

@@ -30,9 +30,18 @@ En Claude Code:
 /plugin install basecamp-manager@basecamp-manager
 ```
 
-Claude Code te pide las opciones del plugin (puedes dejar las de por defecto). Después di **"configura
-Basecamp"** y sigue [docs/SETUP.md](docs/SETUP.md) (en inglés). El guardia queda activo en cuanto el
-plugin está habilitado.
+Claude Code te pide las opciones del plugin (puedes dejar las de por defecto). Abre una sesión nueva y
+sigue [docs/SETUP.md](docs/SETUP.md) (en inglés): registra tu app OAuth, ejecuta
+`~/.config/basecamp-manager/bcm login` en tu terminal y di **"configura Basecamp"** en Claude Code. El
+guardia queda activo en cuanto el plugin está habilitado.
+
+La línea de comandos del plugin, siempre en `~/.config/basecamp-manager/bcm`:
+
+| Comando | Qué hace |
+|---|---|
+| `bcm login` | Abre el navegador, recibe la autorización en localhost y guarda el token sin mostrarlo |
+| `bcm refresh` | Renueva el token (cada dos semanas; Claude te avisa y puede ejecutarlo) |
+| `bcm doctor` | Revisa herramientas, permisos, configuración, token, id de persona y el guardia |
 
 Actualizaciones: en `/plugin`, **Marketplaces**, elige `basecamp-manager` y activa la actualización
 automática, o actualiza a mano con `claude plugin update basecamp-manager@basecamp-manager`.
@@ -41,12 +50,12 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 
 | | Versión |
 |---|---|
-| Plugin | **0.1.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.2.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 o superior** (necesita `onFailure: "block"` para que el guardia falle cerrado). Probado en 2.1.301 |
 | API de Basecamp | API de Basecamp 5 (`3.basecampapi.com`), endpoints verificados en la [documentación oficial](https://github.com/basecamp/bc3-api) el 2026-10-17 |
 | Python | 3.8 o superior, solo biblioteca estándar (ejecuta el guardia) |
 | Herramientas | `curl`, `jq` |
-| Sistema | Probado en macOS. Linux debería funcionar. Windows necesita Git Bash o WSL con `python3` en el `PATH` (sin probar) |
+| Sistema | Probado en macOS. Linux debería funcionar. Windows necesita Git Bash o WSL (sin probar) |
 
 ## Qué impone el guardia
 
@@ -82,6 +91,8 @@ Cada persona configura sus reglas: opciones del plugin en `/plugin` y `guard.pro
   config.json   ids y reglas, sin secretos
   token         token de acceso (600)
   oauth.json    refresh token y credenciales de la app OAuth (600); Claude nunca puede leerlo
+  token-info.json  solo la fecha de caducidad del token
+  bcm           acceso a la línea de comandos del plugin, que el plugin mantiene al día
 ```
 
 `BASECAMP_MANAGER_HOME` cambia el directorio. Nada se guarda en este repositorio.
@@ -89,7 +100,7 @@ Cada persona configura sus reglas: opciones del plugin en `/plugin` y `guard.pro
 ## Desarrollo
 
 ```bash
-python3 -m unittest discover -s tests     # pruebas del guardia; nada llega a Basecamp
+python3 -m unittest discover -s tests     # 79 pruebas; nada llega a Basecamp
 claude plugin validate .                   # manifiesto del marketplace
 claude plugin validate .claude-plugin/plugin.json
 claude --plugin-dir .                      # probar el plugin sin instalarlo
