@@ -86,7 +86,14 @@ with `GET /recordings/<card_id>/comments.json`.
   `PUT /card_tables/steps/<step_id>/completions.json` and `{"completion":"on"}`.
 - **Move:** `POST /card_tables/cards/<id>/moves.json` with `{"column_id": <id>}` (204, no body).
 - **Comment:** `POST /recordings/<card_id>/comments.json` with `{"content":"<p>...</p>"}`.
+- **Evidence (screenshots, recordings, PDFs):** upload with `POST /attachments.json?name=<file>` and
+  `--data-binary @<file>`, then embed the returned `attachable_sgid` as
+  `<bc-attachment sgid="..." caption="..."></bc-attachment>` in a comment or the card content.
+  Show the user which files and where before uploading. See api-recipes.
 - **Append to the description:** rebuild the content from a GET so attachments survive (pitfalls).
+- **Triage a column or a list of cards:** follow [references/triage.md](references/triage.md).
+- **Cards that come up mid-task** (a bug, a pending item): propose the card or the step right when it
+  appears, with the content ready, instead of leaving it for later. Mark steps done as work finishes.
 
 Column ids are in `board.columns` of config.json. To list columns, GET the card table:
 `/card_tables/<card_table_id>.json` (`.lists[] | {id, title}`).

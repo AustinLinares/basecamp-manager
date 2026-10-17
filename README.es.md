@@ -8,7 +8,30 @@ con un **hook de guardia** que impide que el agente borre algo o toque tarjetas 
 
 No oficial. Sin relación con 37signals ni con Anthropic.
 
-## Por qué
+## Por qué existe
+
+Los tableros de tarjetas de Basecamp no están pensados para revisar una lista larga. Volver al tablero
+después de abrir una tarjeta cuesta clics de más, y revisar muchas tarjetas obliga a abrir pestaña tras
+pestaña. Este proyecto nació para evitar todo eso y dejar que el agente recorra la lista por ti.
+
+Con el plugin, Claude puede:
+
+- **Clasificar una columna de una pasada.** Lee cada tarjeta (texto, comentarios, imágenes, fechas de
+  entrega) y las ordena en tareas rápidas, tareas largas, tarjetas con fecha límite y bugs. Cada una
+  recibe una estimación de esfuerzo y, cuando está lo bastante clara, una propuesta de solución. Luego
+  Claude puede encargarse de inmediato de las fáciles y las medianas, repartiendo el trabajo entre
+  subagentes.
+- **Mantener el tablero al día mientras trabajas.** Las tarjetas surgen a mitad de una tarea: un bug,
+  algo que queda pendiente. Claude crea la tarjeta o agrega el paso en cuanto aparece, y marca los
+  pasos como hechos a medida que avanza el trabajo, así nadie tiene que detenerse a actualizar
+  Basecamp a mano.
+- **Adjuntar la evidencia.** Cuando se abre un PR, Claude comenta en la tarjeta con el enlace, qué
+  cambió, cómo se verificó y qué sigue pendiente, con las capturas o grabaciones insertadas en el mismo
+  comentario. Los pasos le indican al equipo qué falta por demostrar.
+
+Todo desde la terminal, sin abrir Basecamp.
+
+## Qué incluye
 
 Darle a un agente un token de Basecamp es arriesgado por defecto: el token actúa como tú, puede mover,
 reasignar o mandar a la papelera las tarjetas de cualquiera, y no hay deshacer. Este plugin trae:
@@ -50,7 +73,7 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 
 | | Versión |
 |---|---|
-| Plugin | **0.2.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.3.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 o superior** (necesita `onFailure: "block"` para que el guardia falle cerrado). Probado en 2.1.301 |
 | API de Basecamp | API de Basecamp 5 (`3.basecampapi.com`), endpoints verificados en la [documentación oficial](https://github.com/basecamp/bc3-api) el 2026-10-17 |
 | Python | 3.8 o superior, solo biblioteca estándar (ejecuta el guardia) |
@@ -66,6 +89,7 @@ automática, o actualiza a mano con `claude plugin update basecamp-manager@basec
 | Tus tarjetas nuevas | Una tarjeta que creaste sigue editable mientras no tenga asignados y no esté en una columna protegida |
 | Reclamar | Una tarjeta sin asignar se te puede asignar con una única escritura exacta, si `allow_claim` está activo |
 | Comentarios | Solo se crean, en tus tarjetas, si `allow_comments` está activo |
+| Subidas | Solo imágenes, videos y PDF, insertados en tus tarjetas, si `allow_uploads` está activo |
 | Lista permitida | Cualquier otro endpoint o método de escritura se niega |
 | Solo curl | El host de Basecamp solo puede aparecer en un comando que empiece por `curl`, con URLs literales |
 | Credenciales | Claude no puede imprimir, copiar ni abrir tu token ni tus secretos OAuth |
@@ -100,7 +124,7 @@ Cada persona configura sus reglas: opciones del plugin en `/plugin` y `guard.pro
 ## Desarrollo
 
 ```bash
-python3 -m unittest discover -s tests     # 79 pruebas; nada llega a Basecamp
+python3 -m unittest discover -s tests     # 92 pruebas; nada llega a Basecamp
 claude plugin validate .                   # manifiesto del marketplace
 claude plugin validate .claude-plugin/plugin.json
 claude --plugin-dir .                      # probar el plugin sin instalarlo

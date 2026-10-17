@@ -116,6 +116,7 @@ Run `/plugin`, open **Installed**, select **basecamp-manager**, then **Configure
 |---|---|---|
 | `allow_claim` | on | Claude may assign an unassigned card to you, in one write, when you ask |
 | `allow_comments` | on | Claude may post comments on your cards (never edit or delete them) |
+| `allow_uploads` | on | Claude may upload screenshots, recordings and PDFs to embed them in your cards |
 | `own_unassigned_edit_minutes` | 0 | How long a card you created stays editable before it has assignees. 0 = no limit |
 | `card_language` | auto | Language for card titles, steps and comments. `auto` follows your messages |
 | `use_workflow` | off | Follow the optional workflow conventions (see `skills/basecamp/references/workflow.md`) |

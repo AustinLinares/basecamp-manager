@@ -11,6 +11,7 @@ The guard is a `PreToolUse` hook that runs before every Bash, Read, Edit, Write 
 | Your unassigned cards | Editable when you are the creator and the card is outside the protected columns (optionally only for N minutes) |
 | Claiming | Only `PUT {"assignee_ids":[you]}` with nothing else, on an unassigned card outside the protected columns, if `allow_claim` |
 | Comments | Create only, on your cards, if `allow_comments`; edits and deletes are denied |
+| Uploads | One image, video or PDF per call, from a file outside the credentials directory, if `allow_uploads`; it appears only where one of your cards embeds it |
 | Allowlist | Any write to an endpoint not on the list, or with another method, is denied |
 | curl only | A command that mentions the API host must start with `curl`; `echo`, `python`, `bash -c`, `xargs` are denied |
 | Literal URLs | A write must target exactly one literal URL inside the configured account |

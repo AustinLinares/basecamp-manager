@@ -251,6 +251,61 @@ class TestOptions(GuardTestCase):
         self.assertDenied(self.curl("GET", "/card_tables/cards/20.json"), "not valid JSON")
 
 
+class TestUploads(GuardTestCase):
+
+    def upload(self, source="/tmp/shot.png", name="shot.png", flag="--data-binary"):
+        return self.bash(f'curl -s -X POST -H "Content-Type: image/png" {flag} @{source} '
+                         f'"{BASE}/attachments.json?name={name}"')
+
+    def test_upload_screenshot(self):
+        self.assertAllowed(self.upload())
+
+    def test_upload_pdf_and_video(self):
+        self.assertAllowed(self.upload("/tmp/report.pdf", "report.pdf"))
+        self.assertAllowed(self.upload("/tmp/demo.mov", "demo.mov"))
+
+    def test_upload_without_explicit_method(self):
+        command = f'curl -s --data-binary @/tmp/shot.png "{BASE}/attachments.json?name=shot.png"'
+        self.assertAllowed(self.bash(command))
+
+    def test_upload_other_file_types(self):
+        self.assertDenied(self.upload("/Users/x/.ssh/id_ed25519", "key.png"), "images, videos and PDFs")
+        self.assertDenied(self.upload("/tmp/.env", "env.png"))
+
+    def test_upload_name_must_be_evidence(self):
+        self.assertDenied(self.upload("/tmp/shot.png", "shot.sh"), "?name=")
+
+    def test_upload_without_name(self):
+        command = f'curl -s -X POST --data-binary @/tmp/shot.png "{BASE}/attachments.json"'
+        self.assertDenied(self.bash(command), "?name=")
+
+    def test_upload_from_stdin_or_inline(self):
+        self.assertDenied(self.upload("-"))
+        command = f"curl -s -X POST --data-binary 'raw' \"{BASE}/attachments.json?name=a.png\""
+        self.assertDenied(self.bash(command), "--data-binary @")
+
+    def test_upload_with_lossy_flag(self):
+        self.assertDenied(self.upload(flag="-d"), "--data-binary @")
+
+    def test_upload_from_credentials_directory(self):
+        self.assertDenied(self.upload(os.path.join(self.tmp.name, "pic.png")), "basecamp-manager directory")
+
+    def test_upload_token_file(self):
+        self.assertDenied(self.upload(self.token, "token.png"))
+
+    def test_uploads_turned_off(self):
+        self.option("allow_uploads", "false")
+        self.assertDenied(self.upload(), "allow_uploads")
+
+    def test_embed_upload_in_comment_on_my_card(self):
+        body = {"content": '<p>Evidence</p><bc-attachment sgid="BAh7abc"></bc-attachment>'}
+        self.assertAllowed(self.curl("POST", "/recordings/20/comments.json", body))
+
+    def test_embed_upload_in_someone_elses_card(self):
+        body = {"content": '<bc-attachment sgid="BAh7abc"></bc-attachment>'}
+        self.assertDenied(self.curl("POST", "/recordings/16/comments.json", body))
+
+
 class TestShellShapes(GuardTestCase):
 
     def test_host_outside_curl(self):
@@ -275,7 +330,7 @@ class TestShellShapes(GuardTestCase):
         self.assertDenied(self.bash(f"curl -T body.json {BASE}/card_tables/cards/16.json"))
 
     def test_unknown_write_endpoint(self):
-        self.assertDenied(self.curl("POST", "/attachments.json", {}), "not an allowed write endpoint")
+        self.assertDenied(self.curl("POST", "/attachments/1.json", {}), "not an allowed write endpoint")
 
     def test_wrong_method_on_known_endpoint(self):
         self.assertDenied(self.curl("PATCH", "/card_tables/cards/20.json", {"title": "x"}))

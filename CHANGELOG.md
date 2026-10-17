@@ -6,6 +6,20 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-17
+
+### Added
+
+- Evidence uploads: the guard allows `POST /attachments.json?name=<file>` with exactly one
+  `--data-binary @<file>` of an image, video or PDF, never from the credentials directory. New plugin
+  option `allow_uploads` (on by default). The skill shows how to embed the upload in a comment or a
+  card description with `<bc-attachment sgid="...">`. Checked against the live API (201 with
+  `attachable_sgid`).
+- Triage recipe (`skills/basecamp/references/triage.md`): read a whole column, classify by effort,
+  type, due date, owner and blockers, propose solutions, and split quick cards across subagents.
+- "Why this exists" section in both READMEs.
+- 13 upload tests (92 in total).
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

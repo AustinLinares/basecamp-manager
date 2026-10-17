@@ -11,7 +11,11 @@
   Steps keep creation order; create them in the order they should appear.
 - **Quotes and accents** in a JSON body on the command line break easily. Write the body to a file
   with the Write tool, validate it with `jq -e .`, send it with `-d @file`.
-- **Uploading attachments** (`/attachments.json`) is not on the allowlist. Link images in a comment.
+- **Uploads are two steps.** `POST /attachments.json?name=<file>` with `--data-binary @<file>` only
+  stores the file and returns `attachable_sgid`; embed it with `<bc-attachment sgid="...">` in a
+  comment or in the card content. Use `--data-binary`, never `-d` (it corrupts binary files). Only
+  images, videos and PDFs are allowed. Set the right `Content-Type` (`image/png`, `image/jpeg`,
+  `application/pdf`, `video/mp4`, `video/quicktime`).
 - **Variables in the URL** (`$BASE/cards/1.json`) are denied: the guard needs the literal URL to know
   what is being written. A variable for the token is fine.
 - **The API host only inside curl.** Even an `echo` or a heredoc that mentions the host is denied.

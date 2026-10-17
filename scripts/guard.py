@@ -10,6 +10,9 @@ Rules (fail-closed for anything it cannot classify):
     write, PUT {"assignee_ids": [you]}, and nothing else. The hook cannot tell whether the user asked
     for it; the skill tells Claude to claim only on an explicit request.
   * Comments (allow_comments) can be created on your cards, never edited or removed.
+  * Uploads (allow_uploads): one evidence file (image, video or PDF) per call with
+    --data-binary @<file>, never from the credentials directory. An upload shows up nowhere until a
+    comment or a description of one of your cards embeds it.
   * Any write to an endpoint that is not on the allowlist is denied.
   * Only curl may talk to the Basecamp API host.
   * The token file may only be read as $(cat <token file>) inside a curl to the API host, or into a
@@ -24,12 +27,15 @@ import os
 import re
 import shlex
 import sys
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
 HOST = "3.basecampapi.com"
 DEFAULT_USER_AGENT = "basecamp-manager guard (https://github.com/AustinLinares/basecamp-manager)"
-DEFAULTS = {"allow_claim": True, "allow_comments": True, "own_unassigned_edit_minutes": 0}
+DEFAULTS = {"allow_claim": True, "allow_comments": True, "allow_uploads": True, "own_unassigned_edit_minutes": 0}
+# Evidence only: screenshots, recordings and PDFs. Anything else on disk stays on disk.
+UPLOAD_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf", ".mp4", ".mov", ".webm"}
 
 ID = r"(\d+)"
 BUCKET = r"(?:/buckets/\d+)?"
@@ -43,6 +49,7 @@ WRITE_ENDPOINTS = [
     ("PUT", re.compile(rf"^{BUCKET}/card_tables/steps/{ID}\.json$"), "step"),
     ("PUT", re.compile(rf"^{BUCKET}/card_tables/steps/{ID}/completions\.json$"), "step"),
     ("POST", re.compile(rf"^{BUCKET}/recordings/{ID}/comments\.json$"), "comment"),
+    ("POST", re.compile(r"^/attachments\.json$"), "upload"),
 ]
 TRASH = re.compile(r"/status/(?:trashed|deleted)|/trash", re.I)
 DATA_FLAGS = ("--data-urlencode", "--data-binary", "--data-ascii", "--data-raw", "--data", "--json", "-d")
@@ -275,6 +282,8 @@ def check_segment(segment, config):
             raise Deny(f"{method} is not allowed on {path} (only {allowed_method})")
         if kind == "create":
             return
+        if kind == "upload":
+            return check_upload(tokens, urls[0], config)
         if kind == "card_update":
             claim = is_claim_body(tokens, config["person_id"])
             return card_allowed(config, match.group(1), kind, claim=claim)
@@ -291,6 +300,28 @@ def check_segment(segment, config):
                 raise Deny("creating comments is turned off (allow_comments)")
             return card_allowed(config, match.group(1), kind)
     raise Deny(f"{method} {path} is not an allowed write endpoint; ask the user to do it in Basecamp")
+
+
+def check_upload(tokens, url, config):
+    """An upload only stores a file; it shows up nowhere until a comment or a card you own embeds it.
+    Still, only evidence files may leave the disk, and never the credentials."""
+    if not config["guard"]["allow_uploads"]:
+        raise Deny("uploading files is turned off (allow_uploads)")
+    sources = [t[len("--data-binary="):] if t.startswith("--data-binary=") else tokens[i + 1]
+               for i, t in enumerate(tokens)
+               if (t == "--data-binary" and i + 1 < len(tokens)) or t.startswith("--data-binary=")]
+    if len(sources) != 1 or len(data_bodies(tokens)) != 1 or not sources[0].startswith("@") or sources[0] == "@-":
+        raise Deny("upload exactly one file with --data-binary @<file>")
+    source = os.path.realpath(os.path.expanduser(sources[0][1:]))
+    if os.path.splitext(source)[1].lower() not in UPLOAD_EXTENSIONS:
+        raise Deny("only images, videos and PDFs can be uploaded (" + ", ".join(sorted(UPLOAD_EXTENSIONS)) + ")")
+    secrets_dir = os.path.realpath(home_dir())
+    if source.startswith(secrets_dir + os.sep):
+        raise Deny("files from the basecamp-manager directory are never uploaded")
+    query = urllib.parse.parse_qs(urllib.parse.urlparse("https://x" + url).query)
+    name = (query.get("name") or [""])[0]
+    if os.path.splitext(name)[1].lower() not in UPLOAD_EXTENSIONS:
+        raise Deny("the upload needs ?name=<file name> with an image, video or PDF extension")
 
 
 def check_bash(command, config):

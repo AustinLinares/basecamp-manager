@@ -8,7 +8,28 @@ and a **guided setup** that never asks you to paste a secret into the chat.
 
 Unofficial. Not affiliated with 37signals or Anthropic.
 
-## Why
+## Why this exists
+
+Basecamp's card tables are not built for working through a long list. Getting back to the board after
+opening a card takes extra clicks, and reviewing many cards means opening tab after tab. This project
+started as a way to skip all that and let the agent go through the list for you.
+
+With the plugin, Claude can:
+
+- **Triage a column in one pass.** It reads every card (text, comments, images, due dates) and sorts
+  them into quick wins, longer tasks, cards with deadlines and bugs. Each card gets an effort estimate
+  and, when it is clear enough, a proposed solution. Claude can then take on the easy and medium ones
+  right away, splitting the work across subagents.
+- **Keep the board current while you work.** Cards come up mid-task: a bug, something left pending.
+  Claude creates the card or adds the step as soon as it appears, and marks steps as done as the work
+  moves forward, so nobody has to stop to update Basecamp by hand.
+- **Attach the evidence.** When a PR opens, Claude comments on the card with the link, what changed,
+  how it was verified and what is still pending, with the screenshots or recordings embedded right in
+  the comment. The steps tell the team what still needs proof.
+
+All from the terminal, without opening Basecamp.
+
+## What's inside
 
 Giving an agent a Basecamp token is risky by default: the token acts as you, it can move, reassign or
 trash anyone's cards, and there is no undo. This plugin bundles three things:
@@ -49,7 +70,7 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 
 | | Version |
 |---|---|
-| Plugin | **0.2.0** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.3.0** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |
@@ -65,6 +86,7 @@ update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
 | Your new cards | A card you created stays editable while unassigned and outside the protected columns |
 | Claiming | An unassigned card can be assigned to you in one exact write, if `allow_claim` is on |
 | Comments | Create only, on your cards, if `allow_comments` is on |
+| Uploads | Only images, videos and PDFs, embedded in your cards, if `allow_uploads` is on |
 | Allowlist | Any other write endpoint or method is denied |
 | curl only | The Basecamp host may only appear in a command that starts with `curl`, with literal URLs |
 | Credentials | Claude cannot print, copy or open your token or OAuth secrets |
@@ -98,7 +120,7 @@ Rules are configurable per person: plugin options in `/plugin` and `guard.protec
 ## Development
 
 ```bash
-python3 -m unittest discover -s tests     # 79 tests, nothing reaches Basecamp
+python3 -m unittest discover -s tests     # 92 tests, nothing reaches Basecamp
 claude plugin validate .                   # marketplace manifest
 claude plugin validate .claude-plugin/plugin.json
 claude --plugin-dir .                      # try the plugin without installing it

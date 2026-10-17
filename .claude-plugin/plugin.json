@@ -1,7 +1,7 @@
 {
   "name": "basecamp-manager",
   "displayName": "Basecamp Manager",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Read and manage Basecamp cards from Claude Code, with a guard hook that blocks deletes and writes to anything that is not yours",
   "author": {
     "name": "Austin Airton Linares Castillo",
@@ -10,7 +10,14 @@
   "homepage": "https://github.com/AustinLinares/basecamp-manager",
   "repository": "https://github.com/AustinLinares/basecamp-manager",
   "license": "MIT",
-  "keywords": ["basecamp", "cards", "kanban", "guard", "hooks", "security"],
+  "keywords": [
+    "basecamp",
+    "cards",
+    "kanban",
+    "guard",
+    "hooks",
+    "security"
+  ],
   "userConfig": {
     "allow_claim": {
       "type": "boolean",
@@ -22,6 +29,12 @@
       "type": "boolean",
       "title": "Allow creating comments",
       "description": "Let Claude post comments on your cards. Comments can never be edited or removed.",
+      "default": true
+    },
+    "allow_uploads": {
+      "type": "boolean",
+      "title": "Allow uploading evidence",
+      "description": "Let Claude upload screenshots, recordings and PDFs to Basecamp so it can embed them in comments or descriptions of your cards. No other file type can be uploaded.",
       "default": true
     },
     "own_unassigned_edit_minutes": {

@@ -38,6 +38,7 @@ there is none.
 | Complete / reopen a step | `PUT /card_tables/steps/<step_id>/completions.json` | `{"completion": "on"}` or `"off"` | 200 |
 | Reorder a step | `POST /card_tables/cards/<card_id>/positions.json` | `{"source_id": <step_id>, "position": 1}` | 204 |
 | Comment | `POST /recordings/<card_id>/comments.json` | `{"content": "<p>html</p>"}` | 201 |
+| Upload evidence | `POST /attachments.json?name=<file name>` | the raw file: `--data-binary @<file>` with `Content-Type` (png, jpg, gif, webp, pdf, mp4, mov, webm) | 201 + `attachable_sgid` |
 
 Notes:
 
@@ -62,6 +63,16 @@ jq -e . /path/to/scratchpad/card.json >/dev/null && T=$(cat ~/.config/basecamp-m
   -H "Authorization: Bearer $T" -H "User-Agent: basecamp-manager (you@example.com)" -H "Content-Type: application/json" \
   -d @/path/to/scratchpad/card.json "https://3.basecampapi.com/1234567/card_tables/lists/333/cards.json" | jq '{id, title, app_url}'
 ```
+
+Upload a screenshot and embed it in a comment (two calls; the upload alone shows up nowhere):
+
+```bash
+T=$(cat ~/.config/basecamp-manager/token); curl -s -X POST -H "Authorization: Bearer $T" -H "User-Agent: basecamp-manager (you@example.com)" \
+  -H "Content-Type: image/png" --data-binary @/path/to/shot.png "https://3.basecampapi.com/1234567/attachments.json?name=shot.png" | jq -r .attachable_sgid
+```
+
+Then post a comment whose content has `<bc-attachment sgid="<attachable_sgid>" caption="What it shows"></bc-attachment>`
+(write the body to a file; the sgid is long). The same tag works inside a card's `content`.
 
 Complete a step:
 
