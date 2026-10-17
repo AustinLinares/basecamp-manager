@@ -3,7 +3,9 @@ except a local listener on 127.0.0.1.
 
 Run: python3 -m unittest discover -s tests
 """
+import contextlib
 import importlib.util
+import io
 import json
 import os
 import shutil
@@ -53,6 +55,59 @@ class HomeTestCase(unittest.TestCase):
     def read(self, name):
         with open(os.path.join(self.home, name)) as handle:
             return handle.read()
+
+
+class TestDoctorBoards(HomeTestCase):
+    """bcm doctor warns about a board whose in progress, in review or done columns are not protected."""
+
+    def doctor(self, config):
+        os.makedirs(self.home, mode=0o700, exist_ok=True)
+        with open(os.path.join(self.home, "config.json"), "w") as handle:
+            json.dump(config, handle)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            bcm.cmd_doctor(None)
+        return out.getvalue()
+
+    BASE = {"account_id": 1, "person_id": 2, "user_agent": "t"}
+
+    def board(self, protected=None):
+        board = {"columns": {"triage": 10, "in_progress": 11, "in_review": 12, "done": 13}}
+        if protected is not None:
+            board["protected_columns"] = protected
+        return board
+
+    def test_board_without_its_own_list_is_covered_by_the_global_list(self):
+        config = dict(self.BASE, boards={"a": self.board()}, guard={"protected_columns": [11, 12, 13]})
+        self.assertIn("ok    board a: in progress, in review and done", self.doctor(config))
+
+    def test_second_board_forgotten(self):
+        config = dict(self.BASE, guard={"protected_columns": [11, 12, 13]}, boards={
+            "a": self.board(),
+            "b": {"columns": {"in_progress": 21, "in_review": 22, "done": 23}}})
+        out = self.doctor(config)
+        self.assertIn("ok    board a:", out)
+        self.assertIn("FAIL  board b:", out)
+        self.assertIn("done, in_progress, in_review", out)
+
+    def test_board_with_its_own_list(self):
+        config = dict(self.BASE, guard={"protected_columns": [99]}, boards={"b": self.board([11, 12, 13])})
+        self.assertIn("ok    board b:", self.doctor(config))
+
+    def test_partly_protected_board_names_what_is_missing(self):
+        config = dict(self.BASE, boards={"b": self.board([11, 13])})
+        out = self.doctor(config)
+        self.assertIn("FAIL  board b:", out)
+        self.assertIn("add the ids of in_review", out)
+
+    def test_single_board_config_is_checked_too(self):
+        config = dict(self.BASE, board=self.board(), guard={"protected_columns": [11]})
+        out = self.doctor(config)
+        self.assertIn("FAIL  board board:", out)
+
+    def test_board_without_roles_is_not_flagged(self):
+        config = dict(self.BASE, boards={"b": {"columns": {"triage": 10}}}, guard={"protected_columns": [99]})
+        self.assertIn("ok    board b:", self.doctor(config))
 
 
 class TestLoginHelpers(unittest.TestCase):

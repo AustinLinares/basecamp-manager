@@ -22,11 +22,14 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
   shown, and it is not retried for 30 minutes (marker file `refresh-failed`, timestamp only). New plugin
   option `auto_refresh` (default on).
 
-- 19 new tests (123 in total).
+- 25 new tests (129 in total).
 
 ### Changed
 
-- `bcm doctor` accepts protected columns from any board. `post_form` takes an optional timeout.
+- `bcm doctor` accepts protected columns from any board, and checks every board (including a single
+  `board`): if its `in_progress`, `in_review` or `done` column is not among the protected columns,
+  it reports a FAIL naming the roles to add, so a board added later cannot go unprotected unnoticed.
+  `post_form` takes an optional timeout.
 
 ## [0.4.1] - 2026-10-17
 

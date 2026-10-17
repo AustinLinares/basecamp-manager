@@ -332,6 +332,18 @@ def cmd_doctor(args):
         protected = None
     report(bool(protected), "config.json has protected columns (guard.protected_columns or a board's)",
            'in Claude Code, say "set up Basecamp" (cards in those columns cannot be claimed)')
+    if protected:
+        boards = dict(config["boards"]) if isinstance(config.get("boards"), dict) else {}
+        if isinstance(config.get("board"), dict):
+            boards.setdefault("board", config["board"])
+        for alias, board in boards.items():
+            columns = board.get("columns") if isinstance(board, dict) else None
+            uncovered = sorted(role for role in ("in_progress", "in_review", "done")
+                               if isinstance(columns, dict) and columns.get(role) is not None
+                               and columns[role] not in protected)
+            report(not uncovered, f"board {alias}: in progress, in review and done columns are protected",
+                   f"add the ids of {', '.join(uncovered)} to guard.protected_columns or to that board's "
+                   "protected_columns, or its cards in those columns can be claimed and edited")
 
     info = read_json("token-info.json", {}) or {}
     if info.get("expires_at"):
