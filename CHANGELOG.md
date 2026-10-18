@@ -6,6 +6,16 @@ bumps `version` in `.claude-plugin/plugin.json`; pushes without a bump do not re
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-17
+
+### Changed
+
+- Docs only (both READMEs): `bcm doctor` row mentions the per-board protected-columns check; new
+  "Updates" section (auto-update is off by default for non-Anthropic marketplaces and each person turns
+  it on once; the two commands to update right now); new "Fewer permission prompts" section
+  (`/fewer-permission-prompts`, and why the broad `curl` rule only stays safe while the guard is
+  enabled); the daily-briefing bullet lists phrases that trigger it.
+
 ## [0.5.0] - 2026-10-17
 
 ### Added

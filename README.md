@@ -23,8 +23,9 @@ With the plugin, Claude can:
 - **Keep the board current while you work.** Cards come up mid-task: a bug, something left pending.
   Claude creates the card or adds the step as soon as it appears, and marks steps as done as the work
   moves forward, so nobody has to stop to update Basecamp by hand.
-- **Brief you in a minute.** "What do I have today?" reads your assignments across projects and
-  gives overdue, due today, in progress and in review. Claude also searches before creating a card
+- **Brief you in a minute.** Ask "what do I have today?", "give me my standup" or "what did I miss?":
+  Claude reads your assignments across projects and gives overdue, due today, in progress and in
+  review. Claude also searches before creating a card
   (to avoid duplicates), shows what changed on a card, and summarizes your unread notifications.
 - **Attach the evidence.** When a PR opens, Claude comments on the card with the link, what changed,
   how it was verified and what is still pending, with the screenshots or recordings embedded right in
@@ -78,16 +79,38 @@ The plugin's command line, always at `~/.config/basecamp-manager/bcm`:
 |---|---|
 | `bcm login` | Opens the browser, catches the authorization on localhost and saves the token without printing it |
 | `bcm refresh` | Renews the access token (every two weeks). The session hook runs it for you when 3 days or fewer are left (option `auto_refresh`); you can run it by hand too |
-| `bcm doctor` | Checks tools, permissions, config, token, person id and the guard |
+| `bcm doctor` | Checks tools, permissions, config, token, person id and the guard, and warns when a board's in progress, in review or done columns are not protected |
 
-Updates: run `/plugin`, **Marketplaces**, select `basecamp-manager`, and turn on auto-update, or
-update by hand with `claude plugin update basecamp-manager@basecamp-manager`.
+### Updates
+
+Auto-update is **off by default** for marketplaces that are not Anthropic's, so each person turns it on
+once: run `/plugin`, open **Marketplaces**, select `basecamp-manager` and enable auto-update. Claude
+Code then checks at startup and installs a new version when `version` in `plugin.json` goes up; an
+open session needs `/reload-plugins` to use it. To update right now:
+
+```
+claude plugin marketplace update basecamp-manager
+```
+
+```
+claude plugin update basecamp-manager@basecamp-manager
+```
+
+### Fewer permission prompts
+
+Claude Code asks before every `curl`. The setup guide suggests allowing
+`Bash(curl * https://3.basecampapi.com/*)`, and the built-in `/fewer-permission-prompts` skill can
+propose an allowlist of the read-only calls you actually repeat, from your own transcripts. Keep two
+things in mind: that rule also matches `POST` and `PUT`, which the guard (a separate hook that runs
+even when a call is allowed) blocks for anything that is not yours; and if you ever disable the plugin,
+the guard stops and the rule would let writes through without asking. Keep the plugin enabled, or
+remove the rule.
 
 ## Compatibility
 
 | | Version |
 |---|---|
-| Plugin | **0.5.0** (see [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.5.1** (see [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 or later** (needs `onFailure: "block"` so the guard fails closed). Tested on 2.1.301 |
 | Basecamp API | Basecamp 5 API (`3.basecampapi.com`), endpoints checked against the [official docs](https://github.com/basecamp/bc3-api) on 2026-10-17 |
 | Python | 3.8 or later, standard library only (runs the guard) |

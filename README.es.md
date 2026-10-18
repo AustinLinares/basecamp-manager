@@ -25,7 +25,8 @@ Con el plugin, Claude puede:
   algo que queda pendiente. Claude crea la tarjeta o agrega el paso en cuanto aparece, y marca los
   pasos como hechos a medida que avanza el trabajo, así nadie tiene que detenerse a actualizar
   Basecamp a mano.
-- **Ponerte al día en un minuto.** "¿Qué tengo hoy?" lee tus asignaciones de todos los proyectos y
+- **Ponerte al día en un minuto.** Pide "¿qué tengo hoy?", "dame mi standup" o "¿qué me perdí?":
+  Claude lee tus asignaciones de todos los proyectos y
   te da lo vencido, lo de hoy, lo que está en progreso y en revisión. Claude también busca antes de
   crear una tarjeta (para evitar duplicados), muestra qué cambió en una tarjeta y resume tus
   notificaciones sin leer.
@@ -82,16 +83,37 @@ La línea de comandos del plugin, siempre en `~/.config/basecamp-manager/bcm`:
 |---|---|
 | `bcm login` | Abre el navegador, recibe la autorización en localhost y guarda el token sin mostrarlo |
 | `bcm refresh` | Renueva el token (cada dos semanas). El hook de inicio de sesión lo ejecuta solo cuando quedan 3 días o menos (opción `auto_refresh`); también puedes ejecutarlo a mano |
-| `bcm doctor` | Revisa herramientas, permisos, configuración, token, id de persona y el guardia |
+| `bcm doctor` | Revisa herramientas, permisos, configuración, token, id de persona y el guardia, y avisa si las columnas in progress, in review o done de un tablero no están protegidas |
 
-Actualizaciones: en `/plugin`, **Marketplaces**, elige `basecamp-manager` y activa la actualización
-automática, o actualiza a mano con `claude plugin update basecamp-manager@basecamp-manager`.
+### Actualizaciones
+
+La actualización automática viene **apagada por defecto** en los marketplaces que no son de Anthropic,
+así que cada persona la activa una vez: en `/plugin`, **Marketplaces**, elige `basecamp-manager` y
+actívala. Claude Code revisa al arrancar e instala la versión nueva cuando sube `version` en
+`plugin.json`; una sesión abierta necesita `/reload-plugins` para usarla. Para actualizar ya:
+
+```
+claude plugin marketplace update basecamp-manager
+```
+
+```
+claude plugin update basecamp-manager@basecamp-manager
+```
+
+### Menos avisos de permisos
+
+Claude Code pregunta antes de cada `curl`. La guía de instalación sugiere permitir
+`Bash(curl * https://3.basecampapi.com/*)`, y el skill integrado `/fewer-permission-prompts` puede
+proponer una lista de las llamadas de solo lectura que repites, a partir de tus propias transcripciones.
+Ten en cuenta dos cosas: esa regla también cubre `POST` y `PUT`, que el guardia (un hook aparte que corre
+aunque la llamada esté permitida) bloquea si no son tuyas; y si desactivas el plugin, el guardia deja de
+actuar y la regla dejaría pasar escrituras sin preguntar. Mantén el plugin habilitado o quita la regla.
 
 ## Compatibilidad
 
 | | Versión |
 |---|---|
-| Plugin | **0.5.0** (ver [CHANGELOG.md](CHANGELOG.md)) |
+| Plugin | **0.5.1** (ver [CHANGELOG.md](CHANGELOG.md)) |
 | Claude Code | **2.1.295 o superior** (necesita `onFailure: "block"` para que el guardia falle cerrado). Probado en 2.1.301 |
 | API de Basecamp | API de Basecamp 5 (`3.basecampapi.com`), endpoints verificados en la [documentación oficial](https://github.com/basecamp/bc3-api) el 2026-10-17 |
 | Python | 3.8 o superior, solo biblioteca estándar (ejecuta el guardia) |
